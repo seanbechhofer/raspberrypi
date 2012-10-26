@@ -1,31 +1,6 @@
 #!/usr/bin/python
 #
-# HD44780 LCD Test Script for
-# Raspberry Pi
-#
-# Author : Matt Hawkins
-# Site   : http://www.raspberrypi-spy.co.uk
-# 
-# Date   : 26/07/2012
-#
-
-# The wiring for the LCD is as follows:
-# 1 : GND
-# 2 : 5V
-# 3 : Contrast (0-5V)*
-# 4 : RS (Register Select)
-# 5 : R/W (Read Write)       - GROUND THIS PIN
-# 6 : Enable or Strobe
-# 7 : Data Bit 0             - NOT USED
-# 8 : Data Bit 1             - NOT USED
-# 9 : Data Bit 2             - NOT USED
-# 10: Data Bit 3             - NOT USED
-# 11: Data Bit 4
-# 12: Data Bit 5
-# 13: Data Bit 6
-# 14: Data Bit 7
-# 15: LCD Backlight +5V**
-# 16: LCD Backlight GND
+# HD44780 LCD driver script. Shows date/time and IP address.
 
 #import
 import piface.pfio as pfio
@@ -46,8 +21,21 @@ def main():
     time.sleep(4) # delay
 
     # Send some text
-    lcd.line1(datetime.datetime.now().strftime('%b %d  %H:%M:%S\n'))
-    lcd.line2('%s' % ( getIP() ) )
+    t = datetime.datetime.now().strftime('%b %d  %H:%M:%S')
+    ip = '%s' % ( getIP() ) 
+    lcd.line(lcd.LINE1,t)
+    lcd.line(lcd.LINE2,ip)
+
+    time.sleep(1)
+
+    t = datetime.datetime.now().strftime('%b %d  %H:%M:%S')
+    lcd.scroll(lcd.LINE1,t)
+    t = datetime.datetime.now().strftime('%b %d  %H:%M:%S')
+    lcd.line(lcd.LINE1,t)
+    ip = '%s' % ( getIP() ) 
+    lcd.scroll(lcd.LINE2,ip)
+    ip = '%s' % ( getIP() ) 
+    lcd.line(lcd.LINE2,ip)
 
 def getIP():
     p = subprocess.Popen("ip addr show wlan0 | grep inet | awk '{print $2}' | cut -d/ -f1", shell=True, stdout=subprocess.PIPE)

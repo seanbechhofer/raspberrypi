@@ -61,6 +61,8 @@ CMD = False
 LINE1 = 0x80 # LCD RAM address for the 1st line
 LINE2 = 0xC0 # LCD RAM address for the 2nd line 
 
+SCROLL = 0.1
+
 # Timing constants
 E_PULSE = 0.00005
 E_DELAY = 0.00005
@@ -132,8 +134,9 @@ def byte(bits, mode):
     write_pin(E, False)  
     time.sleep(E_DELAY)   
   
-def line(line, message):
-    byte(line, CMD)
+def line(l, message):
+#    print str(l) + ":" + message + "|"
+    byte(l, CMD)
     display(message)
 
 def line1(message):
@@ -143,3 +146,11 @@ def line1(message):
 def line2(message):
     byte(LINE2, CMD)
     display(message)
+
+def scroll(l, message):
+    message = (' ' * 16) + message
+    while len(message) != 0:
+        line(l, message)
+        time.sleep(SCROLL)
+        message = message[1:]
+
