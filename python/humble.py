@@ -1,27 +1,39 @@
+"""
+Code to drive custom built UI using humble pi board. The UI currently
+consists of a 16x2 LCD along with three buttons and three leds.
+"""
 import RPi.GPIO as GPIO
 import time
 
-# BEGIN GPIO stuff
-SWITCH1 = 26 #(SPI1)
+# Using pins as simple GPIO
+
+RED = 12 #(GPIO1)
+YELLOW = 13 #(GPIO2)
+GREEN = 15 #(GPIO3)
+LED = {'red': 12,
+       'yellow': 13,
+       'green': 15
+       }
+SWITCH = [23,24,26]
+SWITCH1 = 23 #(SPI1)
 SWITCH2= 24 #(SPI0)
-SWITCH3 = 23 #(SCLK)
+SWITCH3 = 26 #(SCLK)
 
-RS = 16
-E = 18
-D4 = 22
-D5 = 7
-D6 = 19
-D7 = 21
+RS = 16 #(GPIO4)
+E = 18 #(GPIO5)
+D4 = 22 #(GPIO6)
+D5 = 7 #(GPIO7)
+D6 = 19 #(MOSI)
+D7 = 21 #(MISO)
 
-# Define some device constants
+# LCD device constants
 WIDTH = 16    # Maximum characters per line
 CHR = True
 CMD = False
+LINE = [0x80,0xC0] # LCD RAM addresses
 
-LINE1 = 0x80 # LCD RAM address for the 1st line
-LINE2 = 0xC0 # LCD RAM address for the 2nd line 
-
-SCROLL = 0.2
+# Scrolling speed for display
+SCROLL = 0.4
 
 # Timing constants
 E_PULSE = 0.00005
@@ -30,14 +42,22 @@ E_DELAY = 0.00005
 def write_pin(pin,value):
   GPIO.output(pin,value)
 
-def readSwitch(sw):
-  return GPIO.input(sw)
+def switch(n):
+  return GPIO.input(SWITCH[n])
+
+def led(colour, value):
+  GPIO.output(LED[colour], value)
+
 
 def init():
   GPIO.setmode(GPIO.BOARD)       # Use BCM GPIO numbers
-  GPIO.setup(SWITCH1, GPIO.IN)  # 
-  GPIO.setup(SWITCH2, GPIO.IN)  # 
-  GPIO.setup(SWITCH3, GPIO.IN)  # 
+
+  for i in range(0,len(SWITCH)):
+    GPIO.setup(SWITCH[i], GPIO.IN)  # 
+
+  for k in LED.keys():
+    GPIO.setup(LED[k], GPIO.OUT)  # RED
+
   GPIO.setup(E, GPIO.OUT)  # E
   GPIO.setup(RS, GPIO.OUT) # RS
   GPIO.setup(D4, GPIO.OUT) # DB4
@@ -111,7 +131,7 @@ def byte(bits, mode):
   
 def line(l, message):
 #    print str(l) + ":" + message + "|"
-    byte(l, CMD)
+    byte(LINE[l], CMD)
     display(message)
 
 def scroll(l, message):
@@ -122,20 +142,38 @@ def scroll(l, message):
         time.sleep(SCROLL)
 
     
-
-
 def main():
-  line(LINE1,"Hello")
+  """
+  Test Code
+  """
+  line(0,"Hello")
+  led('red',False)
+  led('green',False)
+  led('yellow',False)
   while(True):
-    if (readSwitch(SWITCH1)):
-      line(LINE1,"1")
-    if (readSwitch(SWITCH2)):
-      line(LINE1,"2")
-    if (readSwitch(SWITCH3)):
-      line(LINE1,"3")
+    if (switch(0)):
+      line(0,"Switch 0 Pressed")
+      for i in range(0,3):
+        led('red',True)
+        time.sleep(0.2)
+        led('red',False)
+        time.sleep(0.2)
+    if (switch(1)):
+      line(0,"Switch 1 Pressed")
+      for i in range(0,3):
+        led('green',True)
+        time.sleep(0.2)
+        led('green',False)
+        time.sleep(0.2)
+    if (switch(2)):
+      line(0,"Switch 2 Pressed")
+      for i in range(0,3):
+        led('yellow', True)
+        time.sleep(0.2)
+        led('yellow',False)
+        time.sleep(0.2)
     time.sleep(0.1)
       
-
 if __name__ == '__main__':
   init()
   main()

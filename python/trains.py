@@ -33,7 +33,7 @@ STATIONS = {'Manchester Piccadilly':'MAN',
             'Wilmslow': 'WML',
             'Alderley Edge': 'ALD'}
 
-DELAY = 2
+DELAY = 4
 CYCLES = 15
 NEXT = 2
 FORMAT = '{time:<5} {dest:<3} {estimate:<5}'
@@ -42,27 +42,27 @@ WAITING = 10
 DANGER = 3
 
 def green():
-    humble.green(True)
-    humble.yellow(False)
-    humble.red(False)
+    humble.led('green',True)
+    humble.led('yellow',False)
+    humble.led('red',False)
     print "Green"
 
 def yellow():
-    humble.green(False)
-    humble.yellow(True)
-    humble.red(False)
+    humble.led('green',False)
+    humble.led('yellow',True)
+    humble.led('red',False)
     print "Yellow"
 
 def red():
-    humble.green(False)
-    humble.yellow(False)
-    humble.red(True)
+    humble.led('green',False)
+    humble.led('yellow',False)
+    humble.led('red',True)
     print "Red"
 
 def off():
-    humble.green(False)
-    humble.yellow(False)
-    humble.red(False)
+    humble.led('green',False)
+    humble.led('yellow',False)
+    humble.led('red',False)
     print "Off"
 
 
@@ -141,17 +141,17 @@ def printTrains(trains):
     print "========================================================="
 
 def checkForShutDown():
-    if (humble.switch3()):
-        humble.line(humble.LINE2, "")
-        humble.scroll(humble.LINE2, "Shutting Down...")
-        humble.line(humble.LINE2, "Shutting Down...")
-        humble.line(humble.LINE1, "")
-        humble.line(humble.LINE2, "")
-        os.system("sudo halt")
+    if (humble.switch(2)):
+        humble.line(0, "")
+        humble.line(1, "")
+        off()
+        return True
+    return False
+#        os.system("sudo halt")
 
 def reportTrains(trains):
     train = trains[0]
-    humble.line(humble.LINE1,FORMAT.format(num="1",
+    humble.line(0,FORMAT.format(num="1",
                                      time=train['time'],
                                      dest=shorten(train['dest']),
                                      estimate=train['est'],
@@ -181,24 +181,30 @@ def reportTrains(trains):
         for j in range(1,NEXT+1):
             if j < len(trains):
                 train = trains[j]
-                humble.line(humble.LINE2,FORMAT.format(num=str(j+1),
+                humble.line(1,FORMAT.format(num=str(j+1),
                                                  time=train['time'],
                                                  dest=shorten(train['dest']),
                                                  estimate=train['est'],
                                                  report=train['report']))
-                checkForShutDown()
+                if checkForShutDown():
+                    return False
                 time.sleep(DELAY)
-    
-print LDB.format(dep=DEP,arr=ARR)
-humble.init()
-while(True):
-    f = urllib.urlopen(LDB.format(dep=DEP,arr=ARR))
-    stuff = f.read()
-    o = open('tmp.html','w')
-    o.write(stuff)
-    soup = BeautifulSoup(stuff)
-    trains = getTrains(soup)
-    printTrains(trains)
-    reportTrains(trains)
+    return True
 
-            
+def main():    
+    print LDB.format(dep=DEP,arr=ARR)
+    humble.init()
+    carryOn = True
+    while(carryOn):
+        f = urllib.urlopen(LDB.format(dep=DEP,arr=ARR))
+        stuff = f.read()
+        o = open('tmp.html','w')
+        o.write(stuff)
+        soup = BeautifulSoup(stuff)
+        trains = getTrains(soup)
+        printTrains(trains)
+        carryOn = reportTrains(trains)
+    time.sleep(0.5)
+
+if __name__ == '__main__':
+  main()
