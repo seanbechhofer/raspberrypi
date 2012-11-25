@@ -15,9 +15,9 @@ LED = {'red': 12,
        'green': 15
        }
 SWITCH = [23,24,26]
-SWITCH1 = 23 #(SPI1)
-SWITCH2= 24 #(SPI0)
-SWITCH3 = 26 #(SCLK)
+#SWITCH1 = 23 #(SPI1)
+#SWITCH2= 24 #(SPI0)
+#SWITCH3 = 26 #(SCLK)
 
 RS = 16 #(GPIO4)
 E = 18 #(GPIO5)
@@ -26,11 +26,11 @@ D5 = 7 #(GPIO7)
 D6 = 19 #(MOSI)
 D7 = 21 #(MISO)
 
-# LCD device constants
-WIDTH = 16    # Maximum characters per line
+# LCD device constants. Change these for different display size.
+WIDTH = 20    # Maximum characters per line
 CHR = True
 CMD = False
-LINE = [0x80,0xC0] # LCD RAM addresses
+LINE = [0x80,0xC0,0x94,0xD4] # LCD RAM addresses
 
 # Scrolling speed for display
 SCROLL = 0.4

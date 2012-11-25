@@ -7,6 +7,7 @@ SWITCH2 = Trains
 
 import humble
 import piplayer
+import jukebox
 import trains
 import time
 import os
@@ -14,19 +15,35 @@ import os
 def main():
     humble.init()
     humble.line(0,"Select Function")
-    humble.line(1,"1:Radio;2:Trains")
+    humble.line(1,"1:Music;2:Trains")
     while (True):
         if humble.switch(0):
             time.sleep(0.2)
-            piplayer.main()
+            carryOn = True
+            while (carryOn):
+                humble.line(0,"Select Function")
+                humble.line(1,"1:Radio;2:Jukebox")
+                time.sleep(0.2)
+                if humble.switch(0):
+                    piplayer.main()
+                    humble.line(0,"Select Function")
+                    humble.line(1,"1:Music;2:Trains")
+                if humble.switch(1):
+                    jukebox.main()
+                    humble.line(0,"Select Function")
+                    humble.line(1,"1:Radio;2:Jukebox")
+                if humble.switch(2):
+                    carryOn = False
+                    time.sleep(0.2)
+                time.sleep(0.2)
             humble.line(0,"Select Function")
-            humble.line(1,"1:Radio;2:Trains")
+            humble.line(1,"1:Music;2:Trains")
             time.sleep(0.2)
         if humble.switch(1):
             time.sleep(0.1)
             trains.main()
             humble.line(0,"Select Function")
-            humble.line(1,"1:Radio;2:Trains")
+            humble.line(1,"1:Music;2:Trains")
             time.sleep(0.2)
         if humble.switch(2):
             humble.scroll(0, "Shutting Down...")

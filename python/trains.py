@@ -11,8 +11,8 @@ LDB = 'http://ojp.nationalrail.co.uk/service/ldbboard/dep/{dep}/{arr}/To'
 
 # Departure and Arrival
 DEP = 'HTC'
-#DEP = 'HTC'
 ARR = 'MAN'
+VOICE = False
 
 STATIONS = {'Manchester Piccadilly':'MAN',
             'Wigan Wallgate':'WGW',
@@ -36,10 +36,17 @@ STATIONS = {'Manchester Piccadilly':'MAN',
 DELAY = 4
 CYCLES = 15
 NEXT = 2
+BIGDISPLAY = False
+
 FORMAT = '{time:<5} {dest:<3} {estimate:<5}'
+BIGFORMATHEADER = '  {dep:<3} to {arr:<3}   {h:<2}:{m:<2}'
+BIGFORMAT1 = '{num:<1}){dest}'
+BIGFORMAT2 = '      {time:<5} {estimate:<5}'
+BIGFORMAT3 = '{num:<1}){dest:<3} {time:<5} {estimate:<5}'
 WALKING = 12
 WAITING = 10
 DANGER = 3
+
 
 def green():
     humble.led('green',True)
@@ -139,11 +146,21 @@ def printTrains(trains):
                                  estimate=train['est'],
                                  report=train['report'])
     print "========================================================="
+    if (VOICE):
+        if trains[0]['est'] == "":
+            message = 'The next train is at %s' % trains[0]['time']
+        else:
+            message = 'The next train is scheduled at %s, estimated at %s' % (trains[0]['time'],trains[0]['est'])
+        print message
+        os.system("echo '%s' | festival --tts" % message)
 
 def checkForShutDown():
     if (humble.switch(2)):
         humble.line(0, "")
         humble.line(1, "")
+        if BIGDISPLAY:
+            humble.line(2, "")
+            humble.line(3, "")
         off()
         return True
     return False
@@ -151,11 +168,23 @@ def checkForShutDown():
 
 def reportTrains(trains):
     train = trains[0]
-    humble.line(0,FORMAT.format(num="1",
+    if (BIGDISPLAY):
+        humble.line(1,BIGFORMAT1.format(num="1",
                                      time=train['time'],
-                                     dest=shorten(train['dest']),
+                                     dest=train['dest'],
                                      estimate=train['est'],
                                      report=train['report']))
+        humble.line(2,BIGFORMAT2.format(num="1",
+                                        time=train['time'],
+                                        dest=train['dest'],
+                                        estimate=train['est'],
+                                        report=train['report']))
+    else:
+        humble.line(0,FORMAT.format(num="1",
+                                    time=train['time'],
+                                    dest=shorten(train['dest']),
+                                    estimate=train['est'],
+                                    report=train['report']))
     times = []
     for i in range(0,NEXT):
         if i < len(trains):
@@ -173,19 +202,40 @@ def reportTrains(trains):
         now = datetime.datetime.now()
         nowH = int(now.strftime('%H'))
         nowM = int(now.strftime('%M'))
+        if (BIGDISPLAY):
+            humble.line(0,BIGFORMATHEADER.format(h=now.strftime('%H'),
+                                                 m=now.strftime('%M'),
+                                                 dep=DEP,
+                                                 arr=ARR))
         if (nowH == 0):
             nowH = 24
         nowMinutes = nowH*60 + nowM
         lights(nowMinutes, times)
-
         for j in range(1,NEXT+1):
             if j < len(trains):
                 train = trains[j]
-                humble.line(1,FORMAT.format(num=str(j+1),
-                                                 time=train['time'],
-                                                 dest=shorten(train['dest']),
-                                                 estimate=train['est'],
-                                                 report=train['report']))
+                if (BIGDISPLAY):
+                    humble.line(3,BIGFORMAT3.format(num=str(j+1),
+                                                    time=train['time'],
+                                                    dest=shorten(train['dest']),
+                                                    estimate=train['est'],
+                                                    report=train['report']))
+                    # humble.line(2,BIGFORMAT1.format(num=str(j+1),
+                    #                                 time=train['time'],
+                    #                                 dest=train['dest'],
+                    #                                 estimate=train['est'],
+                    #                                 report=train['report']))
+                    # humble.line(3,BIGFORMAT2.format(num=str(j+1),
+                    #                                 time=train['time'],
+                    #                                 dest=train['dest'],
+                    #                                 estimate=train['est'],
+                    #                                 report=train['report']))
+                else:
+                    humble.line(1,FORMAT.format(num=str(j+1),
+                                                time=train['time'],
+                                                dest=shorten(train['dest']),
+                                                estimate=train['est'],
+                                                report=train['report']))
                 if checkForShutDown():
                     return False
                 time.sleep(DELAY)
