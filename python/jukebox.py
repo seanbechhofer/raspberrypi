@@ -13,7 +13,6 @@ HOST = 'localhost'
 PORT = '6600'
 CON_ID = {'host':HOST, 'port':PORT}
 
-PLAYER = "mpc"
 PAUSE = 0.2
 DISPLAYSLEEP = 5
 
@@ -34,21 +33,30 @@ class DisplayThread(threading.Thread):
     threading.Thread.__init__(self)
     self.jukebox = jb
     self.daemon = True
+    self.carryOn = True
+
+  def done(self):
+      self.carryOn = False
 
   def run(self):
-    while (True):
+    while (self.carryOn):
         time.sleep(DISPLAYSLEEP)
         status = self.jukebox.client.status()
         print status
         info = self.jukebox.client.currentsong()
-        humble.line(0,info['artist'])
-        humble.line(1,info['title'])
         if status['state'] == 'pause' or status['state'] == 'stop':
             humble.led('red',True)
             humble.led('green',False)
         else:
             humble.led('red',False)
             humble.led('green',True)
+        humble.line(0,info['artist'])
+        if (len(info['title']) >= 16):
+            humble.scroll(1,info['title'])
+        else:
+            humble.line(1,info['title'])
+        
+
 
 class Jukebox():
   def __init__(self):
@@ -62,6 +70,14 @@ class Jukebox():
     else:
         print 'fail to connect MPD server.'
         sys.exit(1)
+    try:
+        f = open('/media/usb/playlist.txt','r')
+        playlist = f.readline().rstrip()
+    except IOError:
+        playlist = 'default'
+    print "|" + playlist + "|"
+    self.client.load(playlist)
+
     carryOn = True
     while (carryOn):
         if (humble.switch(0)):
@@ -75,6 +91,9 @@ class Jukebox():
             self.stop()
             carryOn = False
             time.sleep(PAUSE)
+    # Stop the display thread
+    self.dt.done()
+    
 
   def skip(self):
       print "Skipping"

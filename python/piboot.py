@@ -4,13 +4,14 @@ Code that allows selection of varios functions on boot.
 SWITCH1 = Radio
 SWITCH2 = Trains
 """
-
 import humble
 import piplayer
 import jukebox
 import trains
 import time
 import os
+
+BIGBUTTON = 2
 
 def main():
     humble.init()
@@ -46,11 +47,13 @@ def main():
             humble.line(1,"1:Music;2:Trains")
             time.sleep(0.2)
         if humble.switch(2):
-            humble.scroll(0, "Shutting Down...")
-            humble.line(0, "Shutting Down...")
-            humble.line(1, "")
-            os.system("sudo halt")
-
+            time.sleep(BIGBUTTON)
+            if (humble.switch(2)):
+                humble.line(1, "")
+                humble.scroll(0, "Shutting Down...")
+                humble.line(0, "Shutting Down...")
+                humble.line(0, "")
+                os.system("sudo halt")
         time.sleep(0.1)
     
 if __name__ == '__main__':
