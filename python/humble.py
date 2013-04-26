@@ -4,6 +4,7 @@ consists of a 16x2 LCD along with three buttons and three leds.
 """
 import RPi.GPIO as GPIO
 import time
+import threading
 
 # Using pins as simple GPIO
 
@@ -31,6 +32,9 @@ WIDTH = 20    # Maximum characters per line
 CHR = True
 CMD = False
 LINE = [0x80,0xC0,0x94,0xD4] # LCD RAM addresses
+LINES = 4
+# Update speed for display polling
+DISPLAYSLEEP = 0.2
 
 # Scrolling speed for display
 SCROLL = 0.4
@@ -146,33 +150,84 @@ def main():
   """
   Test Code
   """
-  line(0,"Hello")
-  led('red',False)
-  led('green',False)
-  led('yellow',False)
+  hdt = HumbleDisplayThread(data)
+  hdt.start()
+  
+  data.setLine(0,"Hello")
+  data.setLed('red',False)
+  data.setLed('green',False)
+  data.setLed('yellow',False)
   while(True):
     if (switch(0)):
-      line(0,"Switch 0 Pressed")
+      data.setLine(0,"Switch 0 Pressed")
       for i in range(0,3):
-        led('red',True)
+        data.setLed('red',True)
         time.sleep(0.2)
-        led('red',False)
+        data.setLed('red',False)
         time.sleep(0.2)
     if (switch(1)):
-      line(0,"Switch 1 Pressed")
+      data.setLine(0,"Switch 1 Pressed")
       for i in range(0,3):
-        led('green',True)
+        data.setLed('green',True)
         time.sleep(0.2)
-        led('green',False)
+        data.setLed('green',False)
         time.sleep(0.2)
     if (switch(2)):
-      line(0,"Switch 2 Pressed")
+      data.setLine(0,"Switch 2 Pressed")
       for i in range(0,3):
-        led('yellow', True)
+        data.setLed('yellow', True)
         time.sleep(0.2)
-        led('yellow',False)
+        data.setLed('yellow',False)
         time.sleep(0.2)
     time.sleep(0.1)
+
+class HumbleData():
+  def __init__(self):
+    self.line = ["","","",""]
+    self.scroll = [False,False,False,False]
+    self.led = {'red': False,
+                'yellow': False,
+                'green': False}
+  def getLine(self,n):
+    return self.line[n]
+
+  def setLine(self,n,content):
+    self.line[n] = content
+
+  def getScroll(self,n):
+    return self.scroll[n]
+
+  def setScroll(self,n,value):
+    self.scroll[n] = value
+
+  def getLed(self,colour):
+    return self.led[colour]
+
+  def setLed(self,colour,value):
+    self.led[colour] = value
+
+data = HumbleData()
+
+class HumbleDisplayThread(threading.Thread):
+  def __init__(self, hd):
+    threading.Thread.__init__(self)
+    self.data = hd
+    self.daemon = True
+    self.carryOn = True
+
+  def done(self):
+      self.carryOn = False
+
+  def run(self):
+    while (self.carryOn):
+      time.sleep(DISPLAYSLEEP)
+      for i in range(LINES):
+        if (self.data.getScroll(i)):
+          scroll(i,self.data.getLine(i))
+        else:
+          line(i,self.data.getLine(i))
+      for k in LED.keys():
+        led(k,self.data.getLed(k))
       
 if __name__ == '__main__':
   init()

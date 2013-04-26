@@ -15,46 +15,49 @@ BIGBUTTON = 2
 
 def main():
     humble.init()
-    humble.line(0,"Select Function")
-    humble.line(1,"1:Music;2:Trains")
+    hdt = humble.HumbleDisplayThread(humble.data)
+    hdt.start()
+    humble.data.setLine(0,"Select Function")
+    humble.data.setLine(1,"1:Music;2:Trains")
     while (True):
         if humble.switch(0):
             time.sleep(0.2)
             carryOn = True
             while (carryOn):
-                humble.line(0,"Select Function")
-                humble.line(1,"1:Radio;2:Jukebox")
+                humble.data.setLine(0,"Select Function")
+                humble.data.setLine(1,"1:Radio;2:Jukebox")
                 time.sleep(0.2)
                 if humble.switch(0):
-                    piplayer.main()
-                    humble.line(0,"Select Function")
-                    humble.line(1,"1:Music;2:Trains")
+                    piplayer.doStuff()
+                    humble.data.setLine(0,"Select Function")
+                    humble.data.setLine(1,"1:Music;2:Trains")
                 if humble.switch(1):
-                    jukebox.main()
-                    humble.line(0,"Select Function")
-                    humble.line(1,"1:Radio;2:Jukebox")
+                    jukebox.doStuff()
+                    humble.data.setLine(0,"Select Function")
+                    humble.data.setLine(1,"1:Radio;2:Jukebox")
                 if humble.switch(2):
                     carryOn = False
                     time.sleep(0.2)
                 time.sleep(0.2)
-            humble.line(0,"Select Function")
-            humble.line(1,"1:Music;2:Trains")
+            humble.data.setLine(0,"Select Function")
+            humble.data.setLine(1,"1:Music;2:Trains")
             time.sleep(0.2)
         if humble.switch(1):
             time.sleep(0.1)
-            trains.main()
-            humble.line(0,"Select Function")
-            humble.line(1,"1:Music;2:Trains")
+            trains.doStuff()
+            humble.data.setLine(0,"Select Function")
+            humble.data.setLine(1,"1:Music;2:Trains")
             time.sleep(0.2)
         if humble.switch(2):
             time.sleep(BIGBUTTON)
             if (humble.switch(2)):
-                humble.line(1, "")
+                humble.data.setLine(1, "")
                 humble.scroll(0, "Shutting Down...")
-                humble.line(0, "Shutting Down...")
-                humble.line(0, "")
+                humble.data.setLine(0, "Shutting Down...")
+                humble.data.setLine(0, "")
                 os.system("sudo halt")
         time.sleep(0.1)
+    hdt.done()
     
 if __name__ == '__main__':
   main()

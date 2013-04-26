@@ -47,29 +47,28 @@ WALKING = 12
 WAITING = 10
 DANGER = 3
 
-
 def green():
-    humble.led('green',True)
-    humble.led('yellow',False)
-    humble.led('red',False)
+    humble.data.setLed('green',True)
+    humble.data.setLed('yellow',False)
+    humble.data.setLed('red',False)
     print "Green"
 
 def yellow():
-    humble.led('green',False)
-    humble.led('yellow',True)
-    humble.led('red',False)
+    humble.data.setLed('green',False)
+    humble.data.setLed('yellow',True)
+    humble.data.setLed('red',False)
     print "Yellow"
 
 def red():
-    humble.led('green',False)
-    humble.led('yellow',False)
-    humble.led('red',True)
+    humble.data.setLed('green',False)
+    humble.data.setLed('yellow',False)
+    humble.data.setLed('red',True)
     print "Red"
 
 def off():
-    humble.led('green',False)
-    humble.led('yellow',False)
-    humble.led('red',False)
+    humble.data.setLed('green',False)
+    humble.data.setLed('yellow',False)
+    humble.data.setLed('red',False)
     print "Off"
 
 
@@ -156,11 +155,11 @@ def printTrains(trains):
 
 def checkForShutDown():
     if (humble.switch(2)):
-        humble.line(0, "")
-        humble.line(1, "")
+        humble.data.setLine(0, "")
+        humble.data.setLine(1, "")
         if BIGDISPLAY:
-            humble.line(2, "")
-            humble.line(3, "")
+            humble.data.setLine(2, "")
+            humble.data.setLine(3, "")
         off()
         return True
     return False
@@ -169,18 +168,24 @@ def checkForShutDown():
 def reportTrains(trains):
     train = trains[0]
     if (BIGDISPLAY):
-        humble.line(1,BIGFORMAT1.format(num="1",
+        humble.data.setLine(1,BIGFORMAT1.format(num="1",
                                      time=train['time'],
                                      dest=train['dest'],
                                      estimate=train['est'],
                                      report=train['report']))
-        humble.line(2,BIGFORMAT2.format(num="1",
+        humble.data.setLine(2,BIGFORMAT2.format(num="1",
                                         time=train['time'],
                                         dest=train['dest'],
                                         estimate=train['est'],
                                         report=train['report']))
     else:
-        humble.line(0,FORMAT.format(num="1",
+#        print "top line"
+#        print FORMAT.format(num="1",
+#                            time=train['time'],
+#                            dest=shorten(train['dest']),
+#                            estimate=train['est'],
+#                            report=train['report'])
+        humble.data.setLine(0,FORMAT.format(num="1",
                                     time=train['time'],
                                     dest=shorten(train['dest']),
                                     estimate=train['est'],
@@ -203,7 +208,7 @@ def reportTrains(trains):
         nowH = int(now.strftime('%H'))
         nowM = int(now.strftime('%M'))
         if (BIGDISPLAY):
-            humble.line(0,BIGFORMATHEADER.format(h=now.strftime('%H'),
+            humble.data.setLine(0,BIGFORMATHEADER.format(h=now.strftime('%H'),
                                                  m=now.strftime('%M'),
                                                  dep=DEP,
                                                  arr=ARR))
@@ -215,23 +220,29 @@ def reportTrains(trains):
             if j < len(trains):
                 train = trains[j]
                 if (BIGDISPLAY):
-                    humble.line(3,BIGFORMAT3.format(num=str(j+1),
+                    humble.data.setLine(3,BIGFORMAT3.format(num=str(j+1),
                                                     time=train['time'],
                                                     dest=shorten(train['dest']),
                                                     estimate=train['est'],
                                                     report=train['report']))
-                    # humble.line(2,BIGFORMAT1.format(num=str(j+1),
+                    # humble.data.setLine(2,BIGFORMAT1.format(num=str(j+1),
                     #                                 time=train['time'],
                     #                                 dest=train['dest'],
                     #                                 estimate=train['est'],
                     #                                 report=train['report']))
-                    # humble.line(3,BIGFORMAT2.format(num=str(j+1),
+                    # humble.data.setLine(3,BIGFORMAT2.format(num=str(j+1),
                     #                                 time=train['time'],
                     #                                 dest=train['dest'],
                     #                                 estimate=train['est'],
                     #                                 report=train['report']))
                 else:
-                    humble.line(1,FORMAT.format(num=str(j+1),
+#                    print "bottom line"
+#                    print FORMAT.format(num=str(j+1),
+#                                                time=train['time'],
+#                                                dest=shorten(train['dest']),
+#                                                estimate=train['est'],
+#                                                report=train['report'])
+                    humble.data.setLine(1,FORMAT.format(num=str(j+1),
                                                 time=train['time'],
                                                 dest=shorten(train['dest']),
                                                 estimate=train['est'],
@@ -244,6 +255,12 @@ def reportTrains(trains):
 def main():    
     print LDB.format(dep=DEP,arr=ARR)
     humble.init()
+    hdt = humble.HumbleDisplayThread(humble.data)
+    hdt.start()
+    doStuff()
+    hdt.done()
+
+def doStuff():
     carryOn = True
     while(carryOn):
         f = urllib.urlopen(LDB.format(dep=DEP,arr=ARR))

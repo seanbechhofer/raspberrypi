@@ -42,22 +42,32 @@ class DisplayThread(threading.Thread):
     while (self.carryOn):
         time.sleep(DISPLAYSLEEP)
         status = self.jukebox.client.status()
-        print status
+#        print status
         info = self.jukebox.client.currentsong()
         if status['state'] == 'pause' or status['state'] == 'stop':
-            humble.led('red',True)
-            humble.led('green',False)
+            humble.data.setLed('red',True)
+            humble.data.setLed('yellow',False)
+            humble.data.setLed('green',False)
         else:
-            humble.led('red',False)
-            humble.led('green',True)
-        humble.line(0,info['artist'])
-        if (len(info['title']) >= 16):
-            humble.scroll(1,info['title'])
+            humble.data.setLed('red',False)
+            humble.data.setLed('yellow',False)
+            humble.data.setLed('green',True)
+        try:
+            artist = info['artist']
+        except KeyError:
+            artist = ""
+        try:
+            title = info['title']
+        except KeyError:
+            title  = ""
+        humble.data.setLine(0,artist)
+        if (len(title) >= 16):
+            humble.data.setScroll(1,True)
+            humble.data.setLine(1,title)
         else:
-            humble.line(1,info['title'])
+            humble.data.setScroll(1,False)
+            humble.data.setLine(1,title)
         
-
-
 class Jukebox():
   def __init__(self):
     self.dt = DisplayThread(self)
@@ -73,10 +83,13 @@ class Jukebox():
     try:
         f = open('/media/usb/playlist.txt','r')
         playlist = f.readline().rstrip()
+        print "Loading " + playlist
+        self.client.clear()
+        self.client.load(playlist)
     except IOError:
-        playlist = 'default'
-    print "|" + playlist + "|"
-    self.client.load(playlist)
+        print "Problem reading playlist"
+    self.client.stop()
+    self.client.play()
 
     carryOn = True
     while (carryOn):
@@ -102,10 +115,10 @@ class Jukebox():
   def stop(self):
       print "Stopping"
       self.client.stop()
-      humble.line(0,"")
-      humble.line(1,"")
-      humble.led('red', False)
-      humble.led('green', False)
+      humble.data.setLine(0,"")
+      humble.data.setLine(1,"")
+      humble.data.setLed('red', False)
+      humble.data.setLed('green', False)
       time.sleep(0.5)
 
   def toggle(self):
@@ -116,9 +129,15 @@ class Jukebox():
           self.client.pause()
 
 def main():
-  humble.init()
-  time.sleep(0.5)
-  jb = Jukebox()
-
+    humble.init()
+    hdt = humble.HumbleDisplayThread(humble.data)
+    hdt.start()
+    time.sleep(0.5)
+    doStuff()
+    hdt.done()
+    
+def doStuff():
+    jb = Jukebox()
+    
 if __name__ == '__main__':
   main()
