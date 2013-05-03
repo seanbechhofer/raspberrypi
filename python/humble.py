@@ -54,7 +54,7 @@ def led(colour, value):
 
 
 def init():
-  GPIO.setmode(GPIO.BOARD)       # Use BCM GPIO numbers
+  GPIO.setmode(GPIO.BOARD)       # Use BCM GPIO numbers. Should work across revisions
 
   for i in range(0,len(SWITCH)):
     GPIO.setup(SWITCH[i], GPIO.IN)  # 
