@@ -1,28 +1,20 @@
 """
 Code to drive custom built UI using humble pi board. The UI currently
-consists of a 16x2 LCD along with three buttons and three leds.
+consists of a 16x2 LCD along with two I2C connections and an led borg.
 """
 import RPi.GPIO as GPIO
 import time
 import threading
+from LedBorg import LedBorg
 
 # Using pins as simple GPIO
 
-LED = {'red': 12,
-       'yellow': 13,
-       'green': 15
-       }
-SWITCH = [23,24,26]
-#SWITCH1 = 23 #(SPI1)
-#SWITCH2= 24 #(SPI0)
-#SWITCH3 = 26 #(SCLK)
-
-RS = 16 #(GPIO4)
-E = 18 #(GPIO5)
-D4 = 22 #(GPIO6)
-D5 = 7 #(GPIO7)
-D6 = 19 #(MOSI)
-D7 = 21 #(MISO)
+RS = 12 #(GPIO4)
+E = 16 #(GPIO5)
+D4 = 18 #(GPIO6)
+D5 = 22 #(GPIO7)
+D6 = 24 #(MOSI)
+D7 = 26 #(MISO)
 
 # LCD device constants. Change these for different display size.
 WIDTH = 20    # Maximum characters per line
@@ -30,6 +22,7 @@ CHR = True
 CMD = False
 LINE = [0x80,0xC0,0x94,0xD4] # LCD RAM addresses
 LINES = 4
+BIG = False
 # Update speed for display polling
 DISPLAYSLEEP = 0.2
 
@@ -39,25 +32,22 @@ SCROLL = 0.4
 # Timing constants
 E_PULSE = 0.00005
 E_DELAY = 0.00005
+lb = LedBorg()
+
+def big():
+  return BIG
 
 def write_pin(pin,value):
   GPIO.output(pin,value)
 
-def switch(n):
-  return GPIO.input(SWITCH[n])
-
-def led(colour, value):
-  GPIO.output(LED[colour], value)
-
+def led(colour):
+  lb.show(colour)
 
 def init():
+  GPIO.setwarnings(False) # Turn warnings off
+
   GPIO.setmode(GPIO.BOARD)       # Use BCM GPIO numbers. Should work across revisions
-
-  for i in range(0,len(SWITCH)):
-    GPIO.setup(SWITCH[i], GPIO.IN)  # 
-
-  for k in LED.keys():
-    GPIO.setup(LED[k], GPIO.OUT)  # RED
+#  lb = LedBorg()
 
   GPIO.setup(E, GPIO.OUT)  # E
   GPIO.setup(RS, GPIO.OUT) # RS
@@ -151,40 +141,30 @@ def main():
   hdt.start()
   
   data.setLine(0,"Hello")
-  data.setLed('red',False)
-  data.setLed('green',False)
-  data.setLed('yellow',False)
+  data.setColour('black')
   while(True):
-    if (switch(0)):
-      data.setLine(0,"Switch 0 Pressed")
-      for i in range(0,3):
-        data.setLed('red',True)
-        time.sleep(0.2)
-        data.setLed('red',False)
-        time.sleep(0.2)
-    if (switch(1)):
-      data.setLine(0,"Switch 1 Pressed")
-      for i in range(0,3):
-        data.setLed('green',True)
-        time.sleep(0.2)
-        data.setLed('green',False)
-        time.sleep(0.2)
-    if (switch(2)):
-      data.setLine(0,"Switch 2 Pressed")
-      for i in range(0,3):
-        data.setLed('yellow', True)
-        time.sleep(0.2)
-        data.setLed('yellow',False)
-        time.sleep(0.2)
-    time.sleep(0.1)
+      data.setLine(0,"Red")
+      data.setColour('red')
+      time.sleep(1)
+      data.setColour('black')
+      time.sleep(0.5)
+      data.setLine(0,"Green")
+      data.setColour('green')
+      time.sleep(1)
+      data.setColour('black')
+      time.sleep(0.5)
+      data.setLine(0,"Blue")
+      data.setColour('blue')
+      time.sleep(1)
+      data.setColour('black')
+      time.sleep(0.5)
 
 class HumbleData():
   def __init__(self):
     self.line = ["","","",""]
     self.scroll = [False,False,False,False]
-    self.led = {'red': False,
-                'yellow': False,
-                'green': False}
+    self.colour = 'black'
+
   def getLine(self,n):
     return self.line[n]
 
@@ -197,11 +177,11 @@ class HumbleData():
   def setScroll(self,n,value):
     self.scroll[n] = value
 
-  def getLed(self,colour):
-    return self.led[colour]
+  def getColour(self):
+    return self.colour
 
-  def setLed(self,colour,value):
-    self.led[colour] = value
+  def setColour(self,col):
+    self.colour = col
 
 data = HumbleData()
 
@@ -223,8 +203,8 @@ class HumbleDisplayThread(threading.Thread):
           scroll(i,self.data.getLine(i))
         else:
           line(i,self.data.getLine(i))
-      for k in LED.keys():
-        led(k,self.data.getLed(k))
+#        print self.data.getLine(i)
+      led(self.data.getColour())
       
 if __name__ == '__main__':
   init()

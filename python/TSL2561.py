@@ -66,7 +66,7 @@ class TSL2561:
         """Reads IR only diode from the I2C device"""
         return self.readWord(reg);
 
-    def getLux(self, gain = 0):
+    def readLux(self, gain = 0):
         """Grabs a lux reading either with autoranging (gain=0) or with a specified gain (1, 16)"""
         if (gain == 1 or gain == 16):
             self.setGain(gain) # low/highGain
@@ -105,9 +105,9 @@ class TSL2561:
 
         return lux
 
-
-tsl=TSL2561()
-
-print "LUX HIGH GAIN ", tsl.getLux(16)
-print "LUX LOW GAIN ", tsl.getLux(1)
-print "LUX AUTO GAIN ", tsl.getLux()
+if __name__ == "__main__":
+    tsl=TSL2561()
+    print tsl.getLux()
+#print "LUX HIGH GAIN ", tsl.getLux(16)
+#print "LUX LOW GAIN ", tsl.getLux(1)
+#print "LUX AUTO GAIN ", tsl.getLux()

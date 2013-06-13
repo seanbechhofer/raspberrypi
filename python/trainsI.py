@@ -1,7 +1,7 @@
 import urllib, os
 from bs4 import BeautifulSoup
 import re
-import humbleII as humble
+import humble
 import time
 import datetime
 
@@ -31,8 +31,7 @@ STATIONS = {'Manchester Piccadilly':'MAN',
             'Buxton': 'BUX',
             'Chester': 'CTR',
             'Wilmslow': 'WML',
-            'Alderley Edge': 'ALD',
-            'Bolton': 'BOL'}
+            'Alderley Edge': 'ALD'}
 
 DELAY = 4
 CYCLES = 15
@@ -44,37 +43,40 @@ BIGFORMATHEADER = '  {dep:<3} to {arr:<3}   {h:<2}:{m:<2}'
 BIGFORMAT1 = '{num:<1}){dest}'
 BIGFORMAT2 = '      {time:<5} {estimate:<5}'
 BIGFORMAT3 = '{num:<1}){dest:<3} {time:<5} {estimate:<5}'
-
-# Configuration for timings.
-
-# How long it takes to walk to station
 WALKING = 12
-# How long you're prepared to wait
 WAITING = 10
-# Danger margin
 DANGER = 3
 
 def green():
-    humble.data.setColour('green')
+    humble.data.setLed('green',True)
+    humble.data.setLed('yellow',False)
+    humble.data.setLed('red',False)
     print "Green"
 
-def amber():
-    humble.data.setColour('orange')
-    print "Amber"
+def yellow():
+    humble.data.setLed('green',False)
+    humble.data.setLed('yellow',True)
+    humble.data.setLed('red',False)
+    print "Yellow"
 
 def red():
-    humble.data.setColour('red')
+    humble.data.setLed('green',False)
+    humble.data.setLed('yellow',False)
+    humble.data.setLed('red',True)
     print "Red"
 
 def off():
-    humble.data.setColour('black')
+    humble.data.setLed('green',False)
+    humble.data.setLed('yellow',False)
+    humble.data.setLed('red',False)
     print "Off"
+
 
 def lights(now, times):
     # status(g,y)
     greenLight = False
-    amberLight = False
-    # If it's the case that any train yields green, then show green. Same for amber. 
+    yellowLight = False
+    # If it's the case that any train yields green, then show green. Same for yellow. 
     for i in range (0,len(times)):
         togo = times[i] - now
         print str(togo) + " Minutes"
@@ -83,14 +85,14 @@ def lights(now, times):
         elif (togo) > (DANGER + WALKING):
             greenLight = True
         elif (togo) > WALKING:
-            amberLight = True
+            yellowLight = True
         else:
             pass
 
     if (greenLight):
         green()
-    elif (amberLight):
-        amber()
+    elif (yellowLight):
+        yellow()
     else:
         red()
 
@@ -245,8 +247,8 @@ def reportTrains(trains):
                                                 dest=shorten(train['dest']),
                                                 estimate=train['est'],
                                                 report=train['report']))
-                # if checkForShutDown():
-                #     return False
+                if checkForShutDown():
+                    return False
                 time.sleep(DELAY)
     return True
 
