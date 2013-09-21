@@ -1,1 +1,3 @@
 config.cfg
+*.pyc
+*~

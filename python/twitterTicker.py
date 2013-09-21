@@ -9,8 +9,9 @@ from twython import Twython, TwythonError
 
 PAUSE = 20
 
-def showTweet(user, message):
-    print user, message
+def showTweet(user, message, verbose=False):
+    if verbose:
+        print user, message
     humble.data.setLine(0, "@"+user)
     humble.data.setScroll(1, True)
     humble.data.setLine(1, message)
@@ -21,6 +22,9 @@ def main():
     hdt.start()
     parser = argparse.ArgumentParser(description='')
     parser.add_argument('-q','--query', help='query')
+    parser.add_argument('-v','--verbose', action='store_true', default=False,
+                        dest='verbose',
+                        help='verbose')
     args = parser.parse_args()
 
     config = ConfigParser.ConfigParser()
@@ -34,10 +38,11 @@ def main():
 
     while True:
         try:
-            search_results = twitter.search(q=args.query, count=1)
+            search_results = twitter.search(q=args.query, count=3)
             for tweet in search_results['statuses']:
                 showTweet(tweet['user']['screen_name'].encode('utf-8'),
-                tweet['text'].encode('utf-8'))
+                          tweet['text'].encode('utf-8'),
+                          args.verbose)
                 time.sleep(PAUSE)
         except TwythonError as e:
             print e

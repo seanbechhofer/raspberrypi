@@ -5,11 +5,12 @@ from subprocess import *
 from time import sleep, strftime
 from datetime import datetime
  
-time.sleep(10)
+time.sleep(5)
 
 humble.init()
  
-cmd = "ip addr show eth0 | grep inet | awk '{print $2}' | cut -d/ -f1"
+#cmd = "ip addr show eth0 | grep inet | awk '{print $2}' | cut -d/ -f1"
+cmd = "hostname -I"
 
 def run_cmd(cmd):
     p = Popen(cmd, shell=True, stdout=PIPE)
@@ -19,6 +20,6 @@ def run_cmd(cmd):
 while True:
     ipaddr = run_cmd(cmd)
     humble.line(0,datetime.now().strftime('%b %d  %H:%M:%S\n'))
-    humble.line(1,'IP %s' % ( ipaddr ) )
+    humble.line(1,'%s' % ( ipaddr ) )
     sleep(2)
     

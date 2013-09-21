@@ -1,10 +1,13 @@
+#!/usr/bin/python
 from TSL2561 import TSL2561
 from BMP085 import BMP085
 import thingspeak
-import time
+import time, datetime
 import humbleII as humble
 import LedBorg
 import argparse
+import sqlite3
+import mytempodb
 
 tsl = TSL2561()
 bmp = BMP085()
@@ -18,20 +21,39 @@ LCD = False
 
 COLD = 14
 COOL = 16
-OK = 18
-WARM = 21
-HOT = 24
-TOASTY = 25
+OK = 22
+WARM = 28
+HOT = 30
+TOASTY = 35
 
 colours = {
     COLD: "blue",
     COOL: "lightblue",
     OK: "yellow",
     WARM: "green",
-    HOT: "pink",
+    HOT: "orange",
     TOASTY: "red"
     }
 
+def publishTempo(data,verbose=False):
+    timestamp=datetime.datetime.now()
+    mytempodb.write("pi.lux",timestamp,data['field1'])
+    mytempodb.write("pi.temperature",timestamp,data['field2'])
+    mytempodb.write("pi.pressure",timestamp,data['field3'])
+    if verbose:
+        print "Published to tempo-db", timestamp
+
+def publishThingSpeak(data,verbose=False):
+    thingspeak.log(data,verbose)
+
+def store(db,lux,temperature,pressure,verbose=False):
+    conn = sqlite3.connect(db) # or use :memory: to put it in RAM
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO data (lux,temperature,pressure) VALUES ("+str(lux)+","+str(temperature)+","+str(pressure)+")")
+    conn.commit()
+    if verbose:
+        print "Logged to ", db
+    
 def report(lux,temperature,pressure):
     global flipflop
     humble.data.setLine(0,('Temp: {t:<4}'+chr(0xdf)+'C').format(t=temperature))
@@ -63,12 +85,16 @@ def main():
     parser.add_argument('-l','--led', action='store_true', default=False,
                         dest='led',
                         help='log to LED')
-    parser.add_argument('-p','--publish', action='store_true', default=False,
-                        dest='publish',
+    parser.add_argument('-p','--thingspeak', action='store_true', default=False,
+                        dest='thingspeak',
                         help='publish to thingspeak')
+    parser.add_argument('-t','--tempo', action='store_true', default=False,
+                        dest='tempo',
+                        help='publish to tempo-db')
     parser.add_argument('-v','--verbose', action='store_true', default=False,
                         dest='verbose',
                         help='verbose')
+    parser.add_argument('-s','--store', help='log to database')
     args = parser.parse_args()
 
     print "Data Logger"
@@ -77,15 +103,22 @@ def main():
         status = status + " lcd"
     if args.led:
         status = status + " led"
-    if args.publish:
-        status = status + " publish"
+    if args.tempo:
+        status = status + " tempo"
+    if args.thingspeak:
+        status = status + " thingspeak"
     if args.verbose:
         status = status + " verbose"
+    if args.store:
+        status = status + " store: " + args.store
     print status
+    exit
 
-    humble.init()
-    hdt = humble.HumbleDisplayThread(humble.data)
-    hdt.start()
+    if (args.lcd or args.led):
+        humble.init()
+        hdt = humble.HumbleDisplayThread(humble.data)
+        hdt.start()
+
     count = 0
 
     while True:
@@ -108,9 +141,14 @@ def main():
             'field2': temperature,
             'field3': pressure
             }
+        if (args.tempo):
+            publishTempo(data,args.verbose)
+#        print count
         if (count > THROTTLE):
-            if(args.publish):
-                thingspeak.log(data,args.verbose)
+            if (args.thingspeak):
+                publishThingSpeak(data,args.verbose)
+            if (args.store):
+                store(args.store,lux,temperature,pressure,args.verbose)
             count = 0
         else:
             count = count + WAIT

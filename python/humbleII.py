@@ -27,7 +27,7 @@ BIG = False
 DISPLAYSLEEP = 0.2
 
 # Scrolling speed for display
-SCROLL = 0.4
+SCROLL = 0.2
 
 # Timing constants
 E_PULSE = 0.00005
