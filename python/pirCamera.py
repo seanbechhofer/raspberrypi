@@ -56,23 +56,27 @@ def main():
                         help='Tweet Picture')
     parser.add_argument('-c','--cycle', 
                         type=int,
-                        default=10,
+                        default=5,
                         help='Cycle time')
     parser.add_argument('-d', '--delay', 
                         type=int,
-                        default=5,
+                        default=10,
                         help='Delay after triggering')
+    parser.add_argument('-v','--verbose', action='store_true', help='verbose')
     args = parser.parse_args()
 
     while True:
-        print GPIO.input(PIN)
+        if args.verbose:
+            print GPIO.input(PIN)
         if GPIO.input(PIN):
             if args.photo:
                 photo_info = takePhoto()
-                print photo_info
+                if args.verbose:
+                    print photo_info
                 if args.tweet:
                     tweetPhoto(photo_info)
-                    print 'Tweeted!'
+                    if args.verbose:
+                        print 'Tweeted!'
                 time.sleep(args.delay)
         time.sleep(args.cycle)
 

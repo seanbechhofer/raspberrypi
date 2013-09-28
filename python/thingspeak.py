@@ -1,8 +1,6 @@
-import httplib, urllib, ConfigParser
+import httplib, urllib, keys
 
-config = ConfigParser.ConfigParser()
-config.read('config.cfg')
-KEY = config.get('KEYS','thingspeak')
+KEY = keys.key('thingspeak')
 #print KEY
 
 def log(stuff,verbose=False):

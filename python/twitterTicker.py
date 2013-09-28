@@ -3,9 +3,9 @@ import humbleII as humble
 import time
 import urllib
 import simplejson
-import ConfigParser 
 import argparse
 from twython import Twython, TwythonError
+import keys
 
 PAUSE = 20
 
@@ -27,12 +27,17 @@ def main():
                         help='verbose')
     args = parser.parse_args()
 
-    config = ConfigParser.ConfigParser()
-    config.read('config.cfg')
-    CONSUMERKEY = config.get('KEYS','twitter.consumer.key')
-    CONSUMERSECRET = config.get('KEYS','twitter.consumer.secret')
-    ACCESSTOKEN = config.get('KEYS','twitter.access.token')
-    ACCESSTOKENSECRET = config.get('KEYS','twitter.access.token.secret')
+    # config = ConfigParser.ConfigParser()
+    # config.read('/home/pi/conf/config.cfg')
+    # CONSUMERKEY = config.get('KEYS','twitter.consumer.key')
+    # CONSUMERSECRET = config.get('KEYS','twitter.consumer.secret')
+    # ACCESSTOKEN = config.get('KEYS','twitter.access.token')
+    # ACCESSTOKENSECRET = config.get('KEYS','twitter.access.token.secret')
+    CONSUMERKEY = keys.key('twitter.consumer.key')
+    CONSUMERSECRET = keys.key('twitter.consumer.secret')
+    ACCESSTOKEN = keys.key('twitter.access.token')
+    ACCESSTOKENSECRET = keys.key('twitter.access.token.secret')
+    print CONSUMERKEY
     twitter = Twython(CONSUMERKEY, CONSUMERSECRET, 
                       ACCESSTOKEN, ACCESSTOKENSECRET)
 
