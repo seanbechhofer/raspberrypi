@@ -8,10 +8,24 @@ import LedBorg
 import argparse
 import sqlite3
 import mytempodb
+import tweety
 
 tsl = TSL2561()
 bmp = BMP085()
 flipflop = True
+lastTweet = {
+    "temperature": datetime.datetime(2013,1,1,0,0,0),
+    "lux": datetime.datetime(2013,1,1,0,0,0)
+}
+
+TWEET={
+    "cold":0,
+    "hot":25,
+    "dark":0,
+    "bright":30000,
+    "cycle":60
+}
+
 WAIT = 5
 THROTTLE = 30
 PUBLISH = False
@@ -63,6 +77,26 @@ def report(lux,temperature,pressure):
         humble.data.setLine(1,'Lght: {t:<4}lux'.format(t=lux))
     flipflop = not flipflop
 
+def tweet(lux,temperature):
+    now=datetime.datetime.now()
+    if temperature < TWEET["cold"]:
+        if (now - lastTweet["temperature"]).seconds > TWEET["cycle"]:
+            tweety.tweet(now.strftime('%H:%M') + " and it's Freezing! " + temperature + " degrees")
+            lastTweet["temperature"] = now
+    if temperature > TWEET["hot"]:
+        if (now - lastTweet["temperature"]).seconds > TWEET["cycle"]:
+            tweety.tweet((now.strftime('%H:%M') + " and it's Hot Hot Hot! {t:<4}"+" C").format(t=temperature))
+            lastTweet["temperature"] = now
+    if lux <= TWEET["dark"]:
+        if (now - lastTweet["lux"]).seconds > TWEET["cycle"]:
+            tweety.tweet(now.strftime('%H:%M') + " and it's dark!")
+            lastTweet["lux"] = now
+    if lux > TWEET["bright"]:
+        if (now - lastTweet["lux"]).seconds > TWEET["cycle"]:
+            tweety.tweet(now.strftime('%H:%M') + " Bright Light!")
+            lastTweet["lux"] = now
+            
+
 def colour(temperature):
     if temperature <= COLD:
         humble.data.setColour(colours[COLD])
@@ -85,10 +119,13 @@ def main():
     parser.add_argument('-l','--led', action='store_true', default=False,
                         dest='led',
                         help='log to LED')
+    parser.add_argument('-t','--tweet', action='store_true', default=False,
+                        dest='tweet',
+                        help='Tweet')
     parser.add_argument('-p','--thingspeak', action='store_true', default=False,
                         dest='thingspeak',
                         help='publish to thingspeak')
-    parser.add_argument('-t','--tempo', action='store_true', default=False,
+    parser.add_argument('--tempo', action='store_true', default=False,
                         dest='tempo',
                         help='publish to tempo-db')
     parser.add_argument('-v','--verbose', action='store_true', default=False,
@@ -99,6 +136,8 @@ def main():
 
     print "Data Logger"
     status = "Options:"
+    if args.tweet:
+        status = status + " tweet"
     if args.lcd:
         status = status + " lcd"
     if args.led:
@@ -135,6 +174,9 @@ def main():
             print "LUX: ", lux
             print "TMP: ", temperature
             print "PRS: ", pressure
+
+        if args.tweet:
+            tweet(lux, temperature)
 
         data = {
             'field1': lux,
