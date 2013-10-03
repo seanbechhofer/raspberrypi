@@ -20,10 +20,10 @@ lastTweet = {
 
 TWEET={
     "cold":0,
-    "hot":25,
-    "dark":0,
+    "hot":30,
+    "dark":1,
     "bright":30000,
-    "cycle":60
+    "cycle":120
 }
 
 WAIT = 5
@@ -49,16 +49,22 @@ colours = {
     TOASTY: "red"
     }
 
+def hms(datetime):
+    return datetime.strftime('%H:%M:%S')
+
 def publishTempo(data,verbose=False):
     timestamp=datetime.datetime.now()
     mytempodb.write("pi.lux",timestamp,data['field1'])
     mytempodb.write("pi.temperature",timestamp,data['field2'])
     mytempodb.write("pi.pressure",timestamp,data['field3'])
     if verbose:
-        print "Published to tempo-db", timestamp
+        print "Published to tempo-db", hms(timestamp)
 
 def publishThingSpeak(data,verbose=False):
+    timestamp=datetime.datetime.now()
     thingspeak.log(data,verbose)
+    if verbose:
+        print "Published to thingspeak", hms(timestamp)
 
 def store(db,lux,temperature,pressure,verbose=False):
     conn = sqlite3.connect(db) # or use :memory: to put it in RAM
@@ -79,9 +85,9 @@ def report(lux,temperature,pressure):
 
 def tweet(lux,temperature):
     now=datetime.datetime.now()
-    if temperature < TWEET["cold"]:
+    if temperature <= TWEET["cold"]:
         if (now - lastTweet["temperature"]).seconds > TWEET["cycle"]:
-            tweety.tweet(now.strftime('%H:%M') + " and it's Freezing! " + temperature + " degrees")
+            tweety.tweet(now.strftime('%H:%M') + " and it's Freezing! " + temperature + " C")
             lastTweet["temperature"] = now
     if temperature > TWEET["hot"]:
         if (now - lastTweet["temperature"]).seconds > TWEET["cycle"]:
@@ -122,7 +128,7 @@ def main():
     parser.add_argument('-t','--tweet', action='store_true', default=False,
                         dest='tweet',
                         help='Tweet')
-    parser.add_argument('-p','--thingspeak', action='store_true', default=False,
+    parser.add_argument('--thingspeak', action='store_true', default=False,
                         dest='thingspeak',
                         help='publish to thingspeak')
     parser.add_argument('--tempo', action='store_true', default=False,
@@ -174,6 +180,10 @@ def main():
             print "LUX: ", lux
             print "TMP: ", temperature
             print "PRS: ", pressure
+            print "Last Tweets"
+            print "  lux", hms(lastTweet["lux"])
+            print " temp", hms(lastTweet["temperature"])
+           
 
         if args.tweet:
             tweet(lux, temperature)
