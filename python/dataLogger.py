@@ -18,6 +18,8 @@ lastTweet = {
     "lux": datetime.datetime(2013,1,1,0,0,0)
 }
 
+# Parameters controlling tweeting behaviour
+
 TWEET={
     "cold":0,
     "hot":30,
@@ -26,12 +28,13 @@ TWEET={
     "cycle":120
 }
 
+# Cycle period in seconds
 WAIT = 5
-THROTTLE = 30
-PUBLISH = False
-BORG = False
-LCD = False
 
+# Wait time before updating to thingspeak. Tempo-db has no restrictions.
+THROTTLE = 30
+
+# Temperatures and colours
 
 COLD = 14
 COOL = 16
@@ -50,9 +53,11 @@ colours = {
     }
 
 def hms(datetime):
+    '''Format a date'''
     return datetime.strftime('%H:%M:%S')
 
 def publishTempo(data,verbose=False):
+    '''Publish to Tempo-DB'''
     timestamp=datetime.datetime.now()
     mytempodb.write("pi.lux",timestamp,data['field1'])
     mytempodb.write("pi.temperature",timestamp,data['field2'])
@@ -61,12 +66,14 @@ def publishTempo(data,verbose=False):
         print "Published to tempo-db", hms(timestamp)
 
 def publishThingSpeak(data,verbose=False):
+    '''Publish to Thingspeak'''
     timestamp=datetime.datetime.now()
     thingspeak.log(data,verbose)
     if verbose:
         print "Published to thingspeak", hms(timestamp)
 
 def store(db,lux,temperature,pressure,verbose=False):
+    '''store locally'''
     conn = sqlite3.connect(db) # or use :memory: to put it in RAM
     cursor = conn.cursor()
     cursor.execute("INSERT INTO data (lux,temperature,pressure) VALUES ("+str(lux)+","+str(temperature)+","+str(pressure)+")")
@@ -75,6 +82,7 @@ def store(db,lux,temperature,pressure,verbose=False):
         print "Logged to ", db
     
 def report(lux,temperature,pressure):
+    '''Report information to display'''
     global flipflop
     humble.data.setLine(0,('Temp: {t:<4}'+chr(0xdf)+'C').format(t=temperature))
     if (flipflop):
@@ -84,6 +92,7 @@ def report(lux,temperature,pressure):
     flipflop = not flipflop
 
 def tweet(lux,temperature):
+    '''Tweet if certain conditions are met'''
     now=datetime.datetime.now()
     if temperature <= TWEET["cold"]:
         if (now - lastTweet["temperature"]).seconds > TWEET["cycle"]:
@@ -104,6 +113,7 @@ def tweet(lux,temperature):
             
 
 def colour(temperature):
+    '''Map temperatures to colours'''
     if temperature <= COLD:
         humble.data.setColour(colours[COLD])
     elif temperature <= COOL:
@@ -118,6 +128,7 @@ def colour(temperature):
         humble.data.setColour(colours[TOASTY]) 
 
 def main():
+    '''Main loop'''
     parser = argparse.ArgumentParser(description='Log and display sensor data')
     parser.add_argument('-d','--lcd', action='store_true', default=False,
                         dest='lcd',
