@@ -3,7 +3,8 @@
 
 
 import sys
-import smbus
+# Not needed here. Thanks to https://github.com/mackstann for highlighting this.
+#import smbus
 import time
 from Adafruit_I2C import Adafruit_I2C
 
