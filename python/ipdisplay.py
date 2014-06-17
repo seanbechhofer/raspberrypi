@@ -18,7 +18,7 @@ def run_cmd(cmd):
     return output
 
 while True:
-    ipaddr = run_cmd(cmd)
+    ipaddr = run_cmd(cmd)[:-1]
     humble.line(0,datetime.now().strftime('%b %d  %H:%M:%S\n'))
     humble.line(1,'%s' % ( ipaddr ) )
     sleep(2)

@@ -27,7 +27,7 @@ BIG = False
 DISPLAYSLEEP = 0.2
 
 # Scrolling speed for display
-SCROLL = 0.2
+SCROLL = 0.4
 
 # Timing constants
 E_PULSE = 0.00005
@@ -126,11 +126,11 @@ def line(l, message):
     display(message)
 
 def scroll(l, message):
-    message = (' ' * 16) + message
-    while len(message) != 0:
-        message = message[1:]
-        line(l, message)
-        time.sleep(SCROLL)
+  message = (' ' * 16) + message
+  while len(message) != 0:
+    message = message[4:]
+    line(l, message)
+    time.sleep(SCROLL)
 
     
 def main():

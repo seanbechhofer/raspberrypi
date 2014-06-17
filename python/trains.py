@@ -5,46 +5,41 @@ import re
 import humbleII as humble
 import time
 import datetime
+import argparse
+import json
 
 # Pattern for ldb information
 LDB = 'http://ojp.nationalrail.co.uk/service/ldbboard/dep/{dep}/{arr}/To'
-#LDB = 'http://ojp.nationalrail.co.uk/service/ldbboard/dep/{dep}'
 
-# Departure and Arrival
-DEP = 'HTC'
-ARR = 'MAN'
-VOICE = False
+# General configuration
+CONFIG={
+    'dep': 'HTC',
+    'arr': 'MAN',
+    'speak': False,
+    'led':False,
+    'big':False,
+    'announcetwo':True
+}
 
-STATIONS = {'Manchester Piccadilly':'MAN',
-            'Wigan Wallgate':'WGW',
-            'Manchester Airport': 'MIA',
-            'London Euston': 'EUS',
-            'Stockport': 'SPT',
-            'Manchester Oxford Road': 'MCO',
-            'Southport': 'SOP',
-            'Blackpool North': 'BPN',
-            'Liverpool Lime Street': 'LIV',
-            'Birmingham New Street': 'BHM',
-            'Crewe via Stockport': 'CRE',
-            'Crewe': 'CRE',
-            'Macclesfield': 'MAC',
-            'York': 'YRK',
-            'Buxton': 'BUX',
-            'Chester': 'CTR',
-            'Wilmslow': 'WML',
-            'Alderley Edge': 'ALD',
-            'Bolton': 'BOL'}
+st = open("stations.json")
+STATIONS = json.load(st)
+st.close()
+
+STATUS={
+    'goMessage':"",
+    'bestTime':""
+}
 
 DELAY = 4
-CYCLES = 15
+CYCLES = 5
+#CYCLES = 15
 NEXT = 2
-BIGDISPLAY = False
 
 FORMAT = '{time:<5} {dest:<3} {estimate:<5}'
 BIGFORMATHEADER = '  {dep:<3} to {arr:<3}   {h:<2}:{m:<2}'
 BIGFORMAT1 = '{num:<1}){dest}'
-BIGFORMAT2 = '      {time:<5} {estimate:<5}'
-BIGFORMAT3 = '{num:<1}){dest:<3} {time:<5} {estimate:<5}'
+BIGFORMAT2 = '         {time:<5} {estimate:<5}'
+BIGFORMAT3 = '{num:<1}){dest:<6} {time:<5} {estimate:<5}'
 
 # Configuration for timings.
 
@@ -56,44 +51,54 @@ WAITING = 10
 DANGER = 3
 
 def green():
+    global goMessage
     humble.data.setColour('green')
     print "Green"
+    STATUS['goMessage'] = "You can go now"
 
 def amber():
+    global goMessage
     humble.data.setColour('orange')
     print "Amber"
+    STATUS['goMessage'] = "You should go now"
 
 def red():
+    global goMessage
     humble.data.setColour('red')
     print "Red"
+    STATUS['goMessage'] = "You should wait"
 
 def off():
+    global goMessage
     humble.data.setColour('black')
     print "Off"
+    STATUS.goMesssage = ""
 
 def lights(now, times):
-    # status(g,y)
-    greenLight = False
-    amberLight = False
-    # If it's the case that any train yields green, then show green. Same for amber. 
-    for i in range (0,len(times)):
-        togo = times[i] - now
-        print str(togo) + " Minutes"
-        if (togo) > (WAITING + WALKING):
-            pass
-        elif (togo) > (DANGER + WALKING):
-            greenLight = True
-        elif (togo) > WALKING:
-            amberLight = True
-        else:
-            pass
+    if CONFIG['led']:
+        # status(g,y)
+        greenLight = False
+        amberLight = False
+        # If it's the case that any train yields green, then show green. Same for amber. 
+        for i in range (0,len(times)):
+            togo = times[i] - now
+            
+            print str(togo) + " Minutes"
+            if (togo) > (WAITING + WALKING):
+                pass
+            elif (togo) > (DANGER + WALKING):
+                greenLight = True
+            elif (togo) > WALKING:
+                amberLight = True
+            else:
+                pass
 
-    if (greenLight):
-        green()
-    elif (amberLight):
-        amber()
-    else:
-        red()
+        if (greenLight):
+            green()
+        elif (amberLight):
+            amber()
+        else:
+            red()
 
 def shorten(station):
     if STATIONS.has_key(station):
@@ -111,9 +116,6 @@ def getTrains(soup):
             for r in range(0,len(rows)):
                 row = rows[r]
                 cells = row.find_all('td')
-                #print '{time} {dest} {report}'.format(time=cells[0].contents[0].strip(),
-                #                                      dest=cells[1].contents[0].strip(),
-                #                                      report=cells[2].contents[0].strip())
                 train = {}
                 train['time'] = cells[0].contents[0].strip()
                 train['dest'] = cells[1].contents[0].strip()
@@ -127,6 +129,39 @@ def getTrains(soup):
                 trains.append(train)
     return trains
 
+def announce(trains):
+    if CONFIG['speak']:
+        now = datetime.datetime.now()
+        nowH = now.strftime('%H')
+        nowM = now.strftime('%M')
+        timeMessage = 'The time is {h}:{m}'.format(h=nowH,m=nowM)
+        print timeMessage
+        toSpeak = timeMessage
+#        os.system("echo '%s' | festival --tts" % timeMessage)
+
+        if trains[0]['est'] == "":
+            message = 'The next train is at %s' % trains[0]['time']
+        else:
+            message = 'The next train is scheduled at %s, estimated at %s' % (trains[0]['time'],trains[0]['est'])
+        print message
+        toSpeak = toSpeak + ". " + message
+#        os.system("echo '%s' | festival --tts" % message)
+
+        if CONFIG['announcetwo']:
+            if trains[1]['est'] == "":
+                message = 'The train after is at %s' % trains[1]['time']
+            else:
+                message = 'The train after is scheduled at %s, estimated at %s' % (trains[1]['time'],trains[1]['est'])
+            print message
+            toSpeak = toSpeak + ". " + message
+#            os.system("echo '%s' | festival --tts" % message)
+
+        print STATUS['goMessage']
+        toSpeak = toSpeak + ". " + STATUS['goMessage']
+#        os.system("echo '%s' | festival --tts" % STATUS['goMessage'])
+        os.system("echo '%s' | festival --tts" % toSpeak)
+        
+
 # Pretty print details
 def printTrains(trains):
     destLength = 10
@@ -136,27 +171,20 @@ def printTrains(trains):
                              dest="To",
                              estimate="Est",
                              report="Report")
-    print "========================================================="
-    print "1234567890123456"
+    print "======================"
+#    print "12345678901234567890"
     for train in trains:
         print printFormat.format(time=train['time'],
                                  dest=train['dest'][:destLength],
                                  estimate=train['est'],
                                  report=train['report'])
-    print "========================================================="
-    if (VOICE):
-        if trains[0]['est'] == "":
-            message = 'The next train is at %s' % trains[0]['time']
-        else:
-            message = 'The next train is scheduled at %s, estimated at %s' % (trains[0]['time'],trains[0]['est'])
-        print message
-        os.system("echo '%s' | festival --tts" % message)
+    print "======================"
 
 def checkForShutDown():
     if (humble.switch(2)):
         humble.data.setLine(0, "")
         humble.data.setLine(1, "")
-        if BIGDISPLAY:
+        if CONFIG['big']:
             humble.data.setLine(2, "")
             humble.data.setLine(3, "")
         off()
@@ -166,7 +194,7 @@ def checkForShutDown():
 
 def reportTrains(trains):
     train = trains[0]
-    if (BIGDISPLAY):
+    if (CONFIG['big']):
         humble.data.setLine(1,BIGFORMAT1.format(num="1",
                                      time=train['time'],
                                      dest=train['dest'],
@@ -178,12 +206,6 @@ def reportTrains(trains):
                                         estimate=train['est'],
                                         report=train['report']))
     else:
-#        print "top line"
-#        print FORMAT.format(num="1",
-#                            time=train['time'],
-#                            dest=shorten(train['dest']),
-#                            estimate=train['est'],
-#                            report=train['report'])
         humble.data.setLine(0,FORMAT.format(num="1",
                                     time=train['time'],
                                     dest=shorten(train['dest']),
@@ -203,14 +225,16 @@ def reportTrains(trains):
             times.append(trainMinutes)
 
     for i in range(0,CYCLES):
+#        announce(trains)
         now = datetime.datetime.now()
+        print now
         nowH = int(now.strftime('%H'))
         nowM = int(now.strftime('%M'))
-        if (BIGDISPLAY):
+        if (CONFIG['big']):
             humble.data.setLine(0,BIGFORMATHEADER.format(h=now.strftime('%H'),
                                                  m=now.strftime('%M'),
-                                                 dep=DEP,
-                                                 arr=ARR))
+                                                 dep=CONFIG['dep'],
+                                                 arr=CONFIG['arr']))
         if (nowH == 0):
             nowH = 24
         nowMinutes = nowH*60 + nowM
@@ -218,29 +242,15 @@ def reportTrains(trains):
         for j in range(1,NEXT+1):
             if j < len(trains):
                 train = trains[j]
-                if (BIGDISPLAY):
+                if (CONFIG['big']):
                     humble.data.setLine(3,BIGFORMAT3.format(num=str(j+1),
                                                     time=train['time'],
-                                                    dest=shorten(train['dest']),
+                                                    #dest=shorten(train['dest']),
+                                                    # This isn't ideal as it depends on the format
+                                                    dest=train['dest'][:6],
                                                     estimate=train['est'],
                                                     report=train['report']))
-                    # humble.data.setLine(2,BIGFORMAT1.format(num=str(j+1),
-                    #                                 time=train['time'],
-                    #                                 dest=train['dest'],
-                    #                                 estimate=train['est'],
-                    #                                 report=train['report']))
-                    # humble.data.setLine(3,BIGFORMAT2.format(num=str(j+1),
-                    #                                 time=train['time'],
-                    #                                 dest=train['dest'],
-                    #                                 estimate=train['est'],
-                    #                                 report=train['report']))
                 else:
-#                    print "bottom line"
-#                    print FORMAT.format(num=str(j+1),
-#                                                time=train['time'],
-#                                                dest=shorten(train['dest']),
-#                                                estimate=train['est'],
-#                                                report=train['report'])
                     humble.data.setLine(1,FORMAT.format(num=str(j+1),
                                                 time=train['time'],
                                                 dest=shorten(train['dest']),
@@ -252,7 +262,35 @@ def reportTrains(trains):
     return True
 
 def main():    
-    print LDB.format(dep=DEP,arr=ARR)
+    global CONFIG
+
+    parser = argparse.ArgumentParser(description='Live Train Times')
+    parser.add_argument('-s','--speak', action='store_true', default=False,
+                        dest='speak',
+                        help='Announce times')
+    parser.add_argument('-l','--led', action='store_true', default=False,
+                        dest='led',
+                        help='Coloured Lights')
+    parser.add_argument('-d','--dep', help='Departure', default="HTC")
+    parser.add_argument('-a','--arr', help='Arrival', default="MAN")
+    parser.add_argument('-b','--big', action='store_true', default=False,
+                        dest='big',
+                        help='Big Display', )
+    args = parser.parse_args()
+
+    CONFIG['speak'] = args.speak
+    CONFIG['led'] = args.led
+    CONFIG['dep'] = args.dep
+    CONFIG['arr'] = args.arr
+    CONFIG['big']= args.big
+
+    if CONFIG['big']:
+        print "Big Display"
+    if CONFIG['speak']:
+        print "Announcing"
+    if CONFIG['led']:
+        print "Lights"
+    print LDB.format(dep=CONFIG['dep'],arr=CONFIG['arr'])
     humble.init()
     hdt = humble.HumbleDisplayThread(humble.data)
     hdt.start()
@@ -262,13 +300,14 @@ def main():
 def doStuff():
     carryOn = True
     while(carryOn):
-        f = urllib.urlopen(LDB.format(dep=DEP,arr=ARR))
+        f = urllib.urlopen(LDB.format(dep=CONFIG['dep'],arr=CONFIG['arr']))
         stuff = f.read()
         o = open('tmp.html','w')
         o.write(stuff)
         soup = BeautifulSoup(stuff)
         trains = getTrains(soup)
         printTrains(trains)
+        announce(trains)
         carryOn = reportTrains(trains)
     time.sleep(0.5)
 

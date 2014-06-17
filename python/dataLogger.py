@@ -9,23 +9,27 @@ import argparse
 import sqlite3
 import mytempodb
 import tweety
+import whereami
 
 tsl = TSL2561()
 bmp = BMP085()
 flipflop = True
 lastTweet = {
-    "temperature": datetime.datetime(2013,1,1,0,0,0),
-    "lux": datetime.datetime(2013,1,1,0,0,0)
+    "temperature": datetime.datetime(2014,1,1,0,0,0),
+    "lux": datetime.datetime(2014,1,1,0,0,0)
 }
+
+LOCATION = whereami.whereAmI()
 
 # Parameters controlling tweeting behaviour
 
 TWEET={
     "cold":0,
-    "hot":30,
-    "dark":1,
+    "hot":35,
+    "dark":5,
     "bright":30000,
-    "cycle":120
+    "cycle":120,
+    "tweet":1200
 }
 
 # Cycle period in seconds
@@ -84,33 +88,55 @@ def store(db,lux,temperature,pressure,verbose=False):
 def report(lux,temperature,pressure):
     '''Report information to display'''
     global flipflop
-    humble.data.setLine(0,('Temp: {t:<4}'+chr(0xdf)+'C').format(t=temperature))
+    now=datetime.datetime.now()
+    humble.data.setLine(0,('T:{t:>6}'+chr(0xdf)+'C {d:<5}').format(t=temperature,d=now.strftime('%H:%M')))
     if (flipflop):
-        humble.data.setLine(1,'Pres: {t:<4}mb'.format(t=pressure))
+        humble.data.setLine(1,'P:{t:>6}mb {d:<5}'.format(t=pressure,d=now.strftime('%d/%m')))
     else:
-        humble.data.setLine(1,'Lght: {t:<4}lux'.format(t=lux))
+        humble.data.setLine(1,'L:{l:>6}lx {d:<5}'.format(l=lux,d=now.strftime('%d/%m')))
     flipflop = not flipflop
 
 def tweet(lux,temperature):
     '''Tweet if certain conditions are met'''
+    message = None
     now=datetime.datetime.now()
     if temperature <= TWEET["cold"]:
         if (now - lastTweet["temperature"]).seconds > TWEET["cycle"]:
-            tweety.tweet(now.strftime('%H:%M') + " and it's Freezing! " + temperature + " C")
+            message = ((now.strftime('%H:%M') + " and Freezing! {t:<4}" + u'\u00b0' + "C").format(t=temperature))
             lastTweet["temperature"] = now
     if temperature > TWEET["hot"]:
         if (now - lastTweet["temperature"]).seconds > TWEET["cycle"]:
-            tweety.tweet((now.strftime('%H:%M') + " and it's Hot Hot Hot! {t:<4}"+" C").format(t=temperature))
+            message = ((now.strftime('%H:%M') + " and Hot Hot Hot! {t:<4}"+ u'\u00b0' + "C").format(t=temperature))
             lastTweet["temperature"] = now
+    if (now - lastTweet["temperature"]).seconds > TWEET["tweet"]:
+        if temperature <= TWEET["cold"]:
+            message = ((now.strftime('%H:%M') + " and Freezing! {t:<4}" + u'\u00b0' + "C").format(t=temperature))
+            lastTweet["temperature"] = now
+        elif temperature > TWEET["hot"]:
+            message = ((now.strftime('%H:%M') + " and Hot Hot Hot! {t:<4}" + u'\u00b0' + "C").format(t=temperature))
+            lastTweet["temperature"] = now
+        else:
+            message = ((now.strftime('%H:%M') + " and {t:<4}" + u'\u00b0' + "C").format(t=temperature))
+            lastTweet["temperature"] = now
+
     if lux <= TWEET["dark"]:
         if (now - lastTweet["lux"]).seconds > TWEET["cycle"]:
-            tweety.tweet(now.strftime('%H:%M') + " and it's dark!")
+            message = (now.strftime('%H:%M') + " and dark!")
             lastTweet["lux"] = now
     if lux > TWEET["bright"]:
         if (now - lastTweet["lux"]).seconds > TWEET["cycle"]:
-            tweety.tweet(now.strftime('%H:%M') + " Bright Light!")
+            message = (now.strftime('%H:%M') + " Bright Light!")
             lastTweet["lux"] = now
-            
+    if (now - lastTweet["lux"]).seconds > TWEET["tweet"]:
+        if lux <= TWEET["dark"]:
+            message = (now.strftime('%H:%M') + " and dark!")
+            lastTweet["lux"] = now
+        elif lux > TWEET["bright"]:
+            message = (now.strftime('%H:%M') + " Bright Light!")
+            lastTweet["lux"] = now
+    if message:
+        message = "In " + LOCATION['city'] + ", " + LOCATION['country_name'] + " it's " + message
+        tweety.tweet(message)
 
 def colour(temperature):
     '''Map temperatures to colours'''
@@ -176,6 +202,8 @@ def main():
         hdt.start()
 
     count = 0
+
+    
 
     while True:
         # Read data from sensors. Lux, temp and pressure
