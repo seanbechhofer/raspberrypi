@@ -6,7 +6,7 @@ import sys
 # Not needed here. Thanks to https://github.com/mackstann for highlighting this.
 #import smbus
 import time
-#Adafruit_I2C from you https://github.com/adafruit/Adafruit-Raspberry-Pi-Python-Code/blob/master/Adafruit_I2C/Adafruit_I2C.py
+#Adafruit_I2C from https://github.com/adafruit/Adafruit-Raspberry-Pi-Python-Code/blob/master/Adafruit_I2C/Adafruit_I2C.py
 from Adafruit_I2C import Adafruit_I2C
 
 
