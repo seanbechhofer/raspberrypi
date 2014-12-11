@@ -16,10 +16,10 @@ bmp = BMP085()
 flipflop = True
 lastTweet = {
     "temperature": datetime.datetime(2014,1,1,0,0,0),
-    "lux": datetime.datetime(2014,1,1,0,0,0)
-}
+    "lux": datetime.datetime(2014,1,1,0,0,0)}
 
-LOCATION = whereami.whereAmI()
+#LOCATION = whereami.whereAmI()
+LOCATION="Manchester"
 
 # Parameters controlling tweeting behaviour
 
@@ -28,7 +28,7 @@ TWEET={
     "hot":35,
     "dark":5,
     "bright":30000,
-    "cycle":120,
+    "cycle":30,
     "tweet":1200
 }
 
@@ -36,7 +36,7 @@ TWEET={
 WAIT = 5
 
 # Wait time before updating to thingspeak. Tempo-db has no restrictions.
-THROTTLE = 30
+THROTTLE = 60
 
 # Temperatures and colours
 
@@ -136,6 +136,8 @@ def tweet(lux,temperature):
             lastTweet["lux"] = now
     if message:
         message = "In " + LOCATION['city'] + ", " + LOCATION['country_name'] + " it's " + message
+        #print "Tweeting: ", message
+
         tweety.tweet(message)
 
 def colour(temperature):

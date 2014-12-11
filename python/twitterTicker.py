@@ -40,7 +40,7 @@ def main():
     CONSUMERSECRET = keys.key('twitter.consumer.secret')
     ACCESSTOKEN = keys.key('twitter.access.token')
     ACCESSTOKENSECRET = keys.key('twitter.access.token.secret')
-    print CONSUMERKEY
+    #print CONSUMERKEY
     twitter = Twython(CONSUMERKEY, CONSUMERSECRET, 
                       ACCESSTOKEN, ACCESSTOKENSECRET)
 
