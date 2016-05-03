@@ -19,18 +19,6 @@ import Adafruit_GPIO.I2C as I2C
 
 # TODO: Strip out values into constants. 
 
-def reverseByteOrder(data):
-      "Reverses the byte order of an int (16-bit) or long (32-bit) value"
-      # Courtesy Vishal Sapre
-      dstr = hex(data)[2:].replace('L','')
-      byteCount = len(dstr[::2])
-      val = 0
-      for i, n in enumerate(range(byteCount)):
-         d = data & 0xFF
-         val |= (d << (8 * (byteCount - i - 1)))
-         data >>= 8
-      return val
-
 class TSL2561:
     i2c = None
 
@@ -61,10 +49,9 @@ class TSL2561:
     def readWord(self, reg):
         """Reads a word from the I2C device"""
         try:
-            wordval = self.i2c.readU16(reg)
-            newval = reverseByteOrder(wordval)
+            newval = self.i2c.readU16(reg)
             if (self.debug):
-                print("I2C: Device 0x%02X returned 0x%04X from reg 0x%02X" % (self.address, wordval & 0xFFFF, reg))
+                print("I2C: Device 0x%02X returned 0x%04X from reg 0x%02X" % (self.address, newval & 0xFFFF, reg))
             return newval
         except IOError:
             print("Error accessing 0x%02X: Check your I2C address" % self.address)
