@@ -7,8 +7,7 @@ import sys
 #import smbus
 import time
 #Adafruit_I2C from https://github.com/adafruit/Adafruit-Raspberry-Pi-Python-Code/blob/master/Adafruit_I2C/Adafruit_I2C.py
-from Adafruit_I2C import Adafruit_I2C
-
+import Adafruit_GPIO.I2C as I2C
 
 ### Written for Python 2 <-!!!
 ### Big thanks to bryand, who wrote the code that I borrowed heavily from/was inspired by
@@ -23,8 +22,8 @@ from Adafruit_I2C import Adafruit_I2C
 class TSL2561:
     i2c = None
 
-    def __init__(self, address=0x39, debug=0, pause=0.8):
-        self.i2c = Adafruit_I2C(address)
+    def __init__(self, address=0x29, bus=1, debug=0, pause=0.8):
+        self.i2c = I2C.Device(address, bus)
         self.address = address
         self.pause = pause
         self.debug = debug
@@ -50,10 +49,9 @@ class TSL2561:
     def readWord(self, reg):
         """Reads a word from the I2C device"""
         try:
-            wordval = self.i2c.readU16(reg)
-            newval = self.i2c.reverseByteOrder(wordval)
+            newval = self.i2c.readU16(reg)
             if (self.debug):
-                print("I2C: Device 0x%02X returned 0x%04X from reg 0x%02X" % (self.address, wordval & 0xFFFF, reg))
+                print("I2C: Device 0x%02X returned 0x%04X from reg 0x%02X" % (self.address, newval & 0xFFFF, reg))
             return newval
         except IOError:
             print("Error accessing 0x%02X: Check your I2C address" % self.address)
