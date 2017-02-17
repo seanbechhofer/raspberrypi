@@ -1,4 +1,4 @@
-### Adaptation from the original to Python 3, made by BDeliers
+### Adaptation from the original TSL2561.py to be used with Python 3, made by BDeliers
 ### https://github.com/BDeliers
 ### The "update" work was in the "print()" and the use of the Adafruit's i2c module
 
