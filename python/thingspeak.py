@@ -3,7 +3,7 @@ import httplib, urllib, keys
 KEY = keys.key('thingspeak')
 #print KEY
 
-def log(stuff,verbose=False):
+def log(stuff,verbose=True):
     stuff['key'] = KEY
     if verbose:
         print stuff
@@ -18,3 +18,12 @@ def log(stuff,verbose=False):
     conn.close()
 
 #log('field1',20)
+
+
+if __name__ == "__main__":
+    thing_data = {
+        'field1': 1000,
+        'field2': 20,
+        'field3': 999
+    }
+    log(thing_data,verbose=True)

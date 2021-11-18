@@ -4,12 +4,13 @@ from BMP085 import BMP085
 import thingspeak
 import time, datetime
 import humbleII as humble
-import LedBorg
+#import LedBorg
 import argparse
 import sqlite3
 import mytempodb
 import tweety
 import whereami
+import iotplotter
 
 tsl = TSL2561()
 bmp = BMP085()
@@ -19,7 +20,10 @@ lastTweet = {
     "lux": datetime.datetime(2014,1,1,0,0,0)}
 
 #LOCATION = whereami.whereAmI()
-LOCATION="Manchester"
+LOCATION={
+    'city': "Manchester",
+    'country_name': "UK"
+}
 
 # Parameters controlling tweeting behaviour
 
@@ -36,7 +40,7 @@ TWEET={
 WAIT = 5
 
 # Wait time before updating to thingspeak. Tempo-db has no restrictions.
-THROTTLE = 60
+THROTTLE = 20
 
 # Temperatures and colours
 
@@ -76,6 +80,20 @@ def publishThingSpeak(data,verbose=False):
     if verbose:
         print "Published to thingspeak", hms(timestamp)
 
+def publishIOTPlotter(data,verbose=False):
+    payload = {
+        'Temp': [{
+            'value': data['field2']
+            }],
+        'Lux': [{
+            'value': data['field1']
+            }],
+        'Pressure': [{
+            'value': data['field3']
+            }]
+        }
+    iotplotter.log(data=payload,verbose=verbose)
+
 def store(db,lux,temperature,pressure,verbose=False):
     '''store locally'''
     conn = sqlite3.connect(db) # or use :memory: to put it in RAM
@@ -96,7 +114,7 @@ def report(lux,temperature,pressure):
         humble.data.setLine(1,'L:{l:>6}lx {d:<5}'.format(l=lux,d=now.strftime('%d/%m')))
     flipflop = not flipflop
 
-def tweet(lux,temperature):
+def tweet(lux,temperature,verbose=False):
     '''Tweet if certain conditions are met'''
     message = None
     now=datetime.datetime.now()
@@ -119,24 +137,26 @@ def tweet(lux,temperature):
             message = ((now.strftime('%H:%M') + " and {t:<4}" + u'\u00b0' + "C").format(t=temperature))
             lastTweet["temperature"] = now
 
-    if lux <= TWEET["dark"]:
-        if (now - lastTweet["lux"]).seconds > TWEET["cycle"]:
-            message = (now.strftime('%H:%M') + " and dark!")
-            lastTweet["lux"] = now
-    if lux > TWEET["bright"]:
-        if (now - lastTweet["lux"]).seconds > TWEET["cycle"]:
-            message = (now.strftime('%H:%M') + " Bright Light!")
-            lastTweet["lux"] = now
-    if (now - lastTweet["lux"]).seconds > TWEET["tweet"]:
-        if lux <= TWEET["dark"]:
-            message = (now.strftime('%H:%M') + " and dark!")
-            lastTweet["lux"] = now
-        elif lux > TWEET["bright"]:
-            message = (now.strftime('%H:%M') + " Bright Light!")
-            lastTweet["lux"] = now
+    # if lux <= TWEET["dark"]:
+    #     if (now - lastTweet["lux"]).seconds > TWEET["cycle"]:
+    #         message = (now.strftime('%H:%M') + " and dark!")
+    #         lastTweet["lux"] = now
+    # if lux > TWEET["bright"]:
+    #     if (now - lastTweet["lux"]).seconds > TWEET["cycle"]:
+    #         message = (now.strftime('%H:%M') + " Bright Light!")
+    #         lastTweet["lux"] = now
+    # if (now - lastTweet["lux"]).seconds > TWEET["tweet"]:
+    #     if lux <= TWEET["dark"]:
+    #         message = (now.strftime('%H:%M') + " and dark!")
+    #         lastTweet["lux"] = now
+    #     elif lux > TWEET["bright"]:
+    #         message = (now.strftime('%H:%M') + " Bright Light!")
+    #         lastTweet["lux"] = now
     if message:
-        message = "In " + LOCATION['city'] + ", " + LOCATION['country_name'] + " it's " + message
-        #print "Tweeting: ", message
+        #message = "In " + LOCATION['city'] + ", " + LOCATION['country_name'] + " it's " + message
+        message = "In my office it's " + message
+        if verbose:
+            print "Tweet msg: ", message
 
         tweety.tweet(message)
 
@@ -170,6 +190,9 @@ def main():
     parser.add_argument('--thingspeak', action='store_true', default=False,
                         dest='thingspeak',
                         help='publish to thingspeak')
+    parser.add_argument('--iotplotter', action='store_true', default=False,
+                        dest='iotplotter',
+                        help='publish to thingspeak')
     parser.add_argument('--tempo', action='store_true', default=False,
                         dest='tempo',
                         help='publish to tempo-db')
@@ -191,6 +214,8 @@ def main():
         status = status + " tempo"
     if args.thingspeak:
         status = status + " thingspeak"
+    if args.iotplotter:
+        status = status + " iotplotter"
     if args.verbose:
         status = status + " verbose"
     if args.store:
@@ -227,7 +252,7 @@ def main():
            
 
         if args.tweet:
-            tweet(lux, temperature)
+            tweet(lux, temperature,args.verbose)
 
         data = {
             'field1': lux,
@@ -240,6 +265,8 @@ def main():
         if (count > THROTTLE):
             if (args.thingspeak):
                 publishThingSpeak(data,args.verbose)
+            if (args.iotplotter):
+                publishIOTPlotter(data,args.verbose)
             if (args.store):
                 store(args.store,lux,temperature,pressure,args.verbose)
             count = 0

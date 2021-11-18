@@ -11,7 +11,7 @@ twitter = Twython(APP_KEY, APP_SECRET, OAUTH_TOKEN, OAUTH_TOKEN_SECRET)
 
 def tweet(message):
     try:
-        print "Tweeting: ", message
+        print "Tweeting:  ", message
         twitter.update_status(status=message)
     except TwythonError as e:
         print e
