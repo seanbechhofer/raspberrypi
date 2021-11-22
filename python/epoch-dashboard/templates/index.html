@@ -1,0 +1,171 @@
+<html>
+  <head>
+    <script src="static/js/jquery.min.js"></script>
+    <script src="static/js/d3.min.js"></script>
+    <script src="static/js/epoch.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="static/css/epoch.min.css">
+    <link rel="stylesheet" type="text/css" href="static/css/bootstrap-slate.min.css">
+    <link rel="stylesheet" type="text/css" href="static/css/font-awesome.css">
+    <style>
+     .inline .epoch {
+       display: inline-block;
+     }
+    </style>
+    <script>
+     charts = {}
+     charts.temperature = {}
+     charts.lux = {}
+     charts.pressure = {}
+    </script>
+  </head>
+  <body>
+    <div class="container-fluid epoch-theme-dark">
+      <div class="jumbotron text-center">
+	<div class="container">
+	  <h1><span class="fa fa-dashboard"></span> Dashboard</h1>
+	</div>
+      </div>
+      <div class="row">
+        <div class="col-md-2 col-md-offset-3">
+	  <div class="panel panel-default">
+	    <div class="panel-heading">
+	      <div class="panel-title">Temperature</div>
+	    </div>
+	    <div class="panel-body">
+	      <div id="currenttemp" class="epoch gauge-tiny"></div>
+	    </div>
+	  </div>
+	</div>
+        <div class="col-md-2">
+	  <div class="panel panel-default">
+	    <div class="panel-heading">
+	      <div class="panel-title">Lux</div>
+	    </div>
+	    <div class="panel-body">
+	      <div id="currentlux" class="epoch gauge-tiny"></div>
+	    </div>
+	  </div>
+	</div>
+        <div class="col-md-2">
+	  <div class="panel panel-default">
+	    <div class="panel-heading">
+	      <div class="panel-title">Pressure</div>
+	    </div>
+	    <div class="panel-body">
+	      <div id="currentpressure" class="epoch gauge-tiny"></div>
+	    </div>
+	  </div>
+	</div>
+      </div>
+      <div class="row">
+        <div class="col-md-8 col-md-offset-2">
+	  <div class="panel panel-default">
+	    <div class="panel-heading">
+	      <div class="panel-title"><span class="fa fa-bar-chart"></span> History</div>
+	    </div>
+	    <div class="panel-body">
+	      <p>Temp</p><div id="historicaltemp" class="epoch category20c" style="height: 100px; margin: 40px 0;"></div>
+	      <p>Lux</p><div id="historicallux" class="epoch category20c" style="height: 100px; margin: 40px 0;"></div>
+	      <p>Pressure</p><div id="historicalpressure" class="epoch category20c" style="height: 100px; margin: 40px 0;"></div>
+            </div> 
+	  </div> 
+	</div> 
+      </div>
+    </div>
+  </body>
+  <script>
+   $(function() {
+     initialiseCharts();
+   });
+   
+   function initialiseCharts() {
+     $.getJSON( "data.json", function( data ) {
+       ts = data.timestamp;
+       // Ideally should initialise with data from the source rather than zero.
+       charts.temperature.current = $('#currenttemp').epoch({
+	 type: 'time.gauge',
+	 value: data.temperature,
+	 format: function(v) { return (v).toFixed(0) + '\xB0'; },
+	 domain:[0,100],
+       });
+       charts.lux.current = $('#currentlux').epoch({
+	 type: 'time.gauge',
+	 value: data.lux,
+	 format: function(v) { return (v).toFixed(0) + ''; },
+	 domain:[0,20000]
+       });
+       charts.pressure.current = $('#currentpressure').epoch({
+	 type: 'time.gauge',
+	 value: data.pressure,
+	 format: function(v) { return (v).toFixed(0) + ' mB'; },
+	 domain:[950,1050]
+       });
+       
+       blankdata = [];
+       blankvals = {values:[]};
+       blankdata.push(blankvals);
+       now = ((new Date()).getTime() / 1000)|0;
+       // Ideally should initialise with data from the source rather than zero.
+       blankdata[0].values.push({time: now, y:data.temperature});
+       charts.temperature.history = $('#historicaltemp').epoch({ type: 'time.line',
+								 data: blankdata,
+								 //					 windowSize: 10,
+								 axes: ['left', 'right', 'bottom'] }
+       );
+
+       blankdata = [];
+       blankvals = {values:[]};
+       blankdata.push(blankvals);
+       now = ((new Date()).getTime() / 1000)|0;
+       // Ideally should initialise with data from the source rather than zero.
+       blankdata[0].values.push({time: now, y:data.lux});
+       charts.lux.history = $('#historicallux').epoch({ type: 'time.line',
+							data: blankdata,
+							//					 windowSize: 10,
+							axes: ['left', 'right', 'bottom'] }
+       );
+
+       blankdata = [];
+       blankvals = {values:[]};
+       blankdata.push(blankvals);
+       now = ((new Date()).getTime() / 1000)|0;
+       // Ideally should initialise with data from the source rather than zero.
+       blankdata[0].values.push({time: now, y:data.pressure});
+       charts.pressure.history = $('#historicalpressure').epoch({ type: 'time.line',
+								  data: blankdata,
+								  //					 windowSize: 10,
+								  axes: ['left', 'right', 'bottom'] }
+       );
+
+     }
+     )};
+
+   pollDelay = 2000
+   $(document).ready(function(){
+
+     setInterval(function() {
+       $.getJSON( "data.json", function( data ) {
+	 var items = [];
+	 entry = [];
+	 ts = data.timestamp;
+	 entry.push({time: ts, y: data.temperature});
+	 charts.temperature.history.push(entry);
+
+	 entry = [];
+	 entry.push({time: ts, y: data.lux});
+	 charts.lux.history.push(entry);
+
+	 entry = [];
+	 entry.push({time: ts, y: data.pressure});
+	 charts.pressure.history.push(entry);
+
+	 charts.temperature.current.update(data.temperature);
+	 charts.lux.current.update(data.lux);
+	 charts.pressure.current.update(data.pressure);
+       });
+
+     }, pollDelay);
+   });
+  </script>
+
+</html>

@@ -6,6 +6,7 @@ import sys
 # Not needed here. Thanks to https://github.com/mackstann for highlighting this.
 #import smbus
 import time
+#Adafruit_I2C from https://github.com/adafruit/Adafruit-Raspberry-Pi-Python-Code/blob/master/Adafruit_I2C/Adafruit_I2C.py
 from Adafruit_I2C import Adafruit_I2C
 
 
@@ -108,7 +109,7 @@ class TSL2561:
 
 if __name__ == "__main__":
     tsl=TSL2561()
-    print tsl.getLux()
-#print "LUX HIGH GAIN ", tsl.getLux(16)
-#print "LUX LOW GAIN ", tsl.getLux(1)
-#print "LUX AUTO GAIN ", tsl.getLux()
+    print tsl.readLux()
+#print "LUX HIGH GAIN ", tsl.readLux(16)
+#print "LUX LOW GAIN ", tsl.readLux(1)
+#print "LUX AUTO GAIN ", tsl.readLux()
