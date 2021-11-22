@@ -7,19 +7,20 @@ import time
 import datetime
 import argparse
 import json
+import unicodedata
 
 # Pattern for ldb information
 LDB = 'http://ojp.nationalrail.co.uk/service/ldbboard/dep/{dep}/{arr}/To'
 
-# General configuration
 CONFIG={
-    'dep': 'HTC',
-    'arr': 'MAN',
+    'dep': 'MAN',
+    'arr': 'HTC',
     'speak': False,
-    'led':False,
+    'led':True,
     'big':False,
-    'announcetwo':True
+    'announcetwo':False
 }
+
 
 st = open("stations.json")
 STATIONS = json.load(st)
@@ -117,11 +118,12 @@ def getTrains(soup):
                 row = rows[r]
                 cells = row.find_all('td')
                 train = {}
-                train['time'] = cells[0].contents[0].strip()
-                train['dest'] = cells[1].contents[0].strip()
+                train['time'] = cells[0].contents[0].strip().encode('ascii','replace')
+                train['dest'] = cells[1].contents[0].strip().encode('ascii','replace')
                 # Collapse all white space
-                train['dest'] = re.sub(r"\s+", ' ', train['dest'])
-                train['report'] =cells[2].contents[0].strip()
+                train['dest'] = re.sub(r"\s+", ' ', train['dest']).encode('ascii','replace')
+                train['report'] = cells[2].contents[0].strip().encode('ascii','replace')
+                print train['report']
                 if re.match('[0-9][0-9]:[0-9][0-9]',train['report']):
                     train['est'] = train['report']
                 else:
@@ -164,7 +166,7 @@ def announce(trains):
 
 # Pretty print details
 def printTrains(trains):
-    destLength = 10
+    destLength = 40
     printFormat = ' {time:<6}| {estimate:<6}| {dest:<' + str(destLength) + '}| {report:<20}'
     printFormat = '{time:<5} {dest:<' + str(destLength) + '} {estimate:<5}'
     print printFormat.format(time="Time",

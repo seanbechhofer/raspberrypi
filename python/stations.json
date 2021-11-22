@@ -10,6 +10,7 @@
 "Liverpool Lime Street": "LIV",
 "Birmingham New Street": "BHM",
 "Crewe via Stockport": "CRE",
+"Crewe?via Stockport": "CRE",
 "Crewe": "CRE",
 "Macclesfield": "MAC",
 "York": "YRK",
@@ -20,5 +21,6 @@
 "Bolton": "BOL",
 "Chinley": "CLY",
 "Barrow-in-Furness": "BIF",
-"Preston (Lancs)": "PRE"
+"Preston (Lancs)": "PRE",
+"Hazel Grove": "HAZ"
 }
