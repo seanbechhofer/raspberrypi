@@ -88,11 +88,14 @@ class TSL2561:
            ambient *= 16    # scale 1x to 16x
            IR *= 16         # scale 1x to 16x
                         
-        ratio = (IR / float(ambient)) # changed to make it run under python 2
-
         if (self.debug):
             print "IR Result", IR
             print "Ambient Result", ambient
+
+        if ambient == 0:
+            return 0
+
+        ratio = (IR / float(ambient)) # changed to make it run under python 2
 
         if ((ratio >= 0) & (ratio <= 0.52)):
             lux = (0.0315 * ambient) - (0.0593 * ambient * (ratio**1.4))
